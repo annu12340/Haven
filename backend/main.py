@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 
-from  utils import expand_user_text, text_to_image
-from models import PostInfo
+from utils import expand_user_text, text_to_image
+from schema import PostInfo
 
 app = FastAPI()
 
