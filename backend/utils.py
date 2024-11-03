@@ -1,6 +1,8 @@
 import os
 import google.generativeai as genai
 from dotenv import load_dotenv
+from PIL import Image
+
 
 from prompts import USER_POST_TEXT_EXPANSION_PROMPT
 
@@ -30,6 +32,49 @@ async def text_to_image(user_input):
 
 
 
-    for image in result.images:
-    # Open and display the image using your local operating system.
-        image._pil_image.show()
+    # for image in result.images:
+    # # Open and display the image using your local operating system.
+    #     image._pil_image.show()
+
+
+def encode_text_in_image(image: Image.Image, text: str) -> Image.Image:
+    """
+    Encodes text into the image using LSB steganography on the RGB values.
+    """
+    # Convert text to binary
+    binary_text = ''.join(format(ord(char), '08b') for char in text) + '1111111111111110'  # End marker
+
+    pixels = image.load()  # Access pixels
+    width, height = image.size
+    binary_index = 0
+
+    for y in range(height):
+        for x in range(width):
+            if binary_index < len(binary_text):
+                r, g, b = pixels[x, y]
+                r = (r & ~1) | int(binary_text[binary_index])  # Change LSB of red channel
+                pixels[x, y] = (r, g, b)
+                binary_index += 1
+            else:
+                return image
+    return image
+
+def decode_text_from_image(image: Image.Image) -> str:
+    """
+    Decodes text from the image using LSB steganography on the RGB values.
+    """
+    binary_text = ""
+    pixels = image.load()
+    width, height = image.size
+
+    for y in range(height):
+        for x in range(width):
+            r, _, _ = pixels[x, y]
+            binary_text += str(r & 1)  # Extract LSB of red channel
+
+            # Check for end marker
+            if binary_text[-16:] == '1111111111111110':
+                binary_text = binary_text[:-16]  # Remove end marker
+                decoded_text = ''.join(chr(int(binary_text[i:i+8], 2)) for i in range(0, len(binary_text), 8))
+                return decoded_text
+    return ""
