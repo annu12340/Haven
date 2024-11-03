@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile, Depends
 import requests
 from io import BytesIO
 from fastapi.responses import StreamingResponse
@@ -39,14 +39,21 @@ async def create_image_from_prompt(input_data: str):
         raise HTTPException(status_code=500, detail=f"An error occurred while processing the input\n Error:- {e}") from e
 
 @app.post("/encode")
-async def encode_text(request: StegoRequest):
+async def encode_text(text: str = Form(...), img_url: str = None, file: UploadFile = File(None)):
     try:
-        # Get image from URL
-        response = requests.get(request.image_url)
-        image = Image.open(BytesIO(response.content))
-
-        # Encode text into the image
-        encoded_image = encode_text_in_image(image, request.text)
+        # Ensure only one image source is provided
+        if bool(img_url) == bool(file):
+            raise HTTPException(status_code=400, detail="Please provide either an image URL or an image file, but not both.")
+        
+        # Load the image from URL or uploaded file
+        if img_url:
+            response = requests.get(img_url)
+            image = Image.open(BytesIO(response.content))
+        elif file:
+            image = Image.open(file.file)
+        
+        # Encode the text into the image
+        encoded_image = encode_text_in_image(image, text)
         
         # Save the encoded image to a temporary file
         output_path = "encoded_image.png"
@@ -60,3 +67,5 @@ async def encode_text(request: StegoRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
