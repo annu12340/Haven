@@ -4,8 +4,8 @@ from io import BytesIO
 from fastapi.responses import StreamingResponse
 from PIL import Image
 
-from  utils import expand_user_text, text_to_image, decode_text_from_image, encode_text_in_image
-from  schema import PostInfo
+from  backend.utils import expand_user_text, text_to_image, decode_text_from_image, encode_text_in_image
+from  backend.schema import PostInfo
 
 app = FastAPI()
 

@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from PIL import Image
 
 
-from prompts import USER_POST_TEXT_EXPANSION_PROMPT
+from backend.prompts import USER_POST_TEXT_EXPANSION_PROMPT
 
 load_dotenv()
 
