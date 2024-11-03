@@ -1,3 +1,5 @@
 .venv
 .env
-backend/__pycache__
+google-api.json
+encoded_image.png
+backend/__pycache__/*

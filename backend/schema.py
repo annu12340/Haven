@@ -6,7 +6,3 @@ class PostInfo(BaseModel):
     current_situation: str
     custom_text: str
     number: str
-
-class StegoRequest(BaseModel):
-    image_url: str
-    text: str

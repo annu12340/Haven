@@ -5,7 +5,7 @@ from fastapi.responses import StreamingResponse
 from PIL import Image
 
 from  utils import expand_user_text, text_to_image, decode_text_from_image, encode_text_in_image
-from  schema import PostInfo, StegoRequest
+from  schema import PostInfo
 
 app = FastAPI()
 
@@ -39,7 +39,7 @@ async def create_image_from_prompt(input_data: str):
         raise HTTPException(status_code=500, detail=f"An error occurred while processing the input\n Error:- {e}") from e
 
 @app.post("/encode")
-async def encode_text(text: str = Form(...), img_url: str = None, file: UploadFile = File(None)):
+async def encode_text(text: str, img_url: str = None, file: UploadFile = File(None)):
     try:
         # Ensure only one image source is provided
         if bool(img_url) == bool(file):
@@ -69,3 +69,24 @@ async def encode_text(text: str = Form(...), img_url: str = None, file: UploadFi
         raise HTTPException(status_code=500, detail=str(e))
     
 
+@app.post("/decode")
+async def decode_text(img_url: str = None, file: UploadFile = File(None)):
+    try:
+        if bool(img_url) == bool(file):
+            # Raise error if both or neither are provided
+            raise HTTPException(status_code=400, detail="Please provide either an image URL or an image file, but not both.")
+        
+        if img_url:
+            # Get image from URL
+            response = requests.get(img_url)
+            image = Image.open(BytesIO(response.content))
+        elif file:
+            # Get image from uploaded file
+            image = Image.open(file.file)
+
+        # Decode text from the image
+        decoded_text = decode_text_from_image(image)
+        return {"decoded_text": decoded_text}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
