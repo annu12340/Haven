@@ -12,6 +12,7 @@ from backend.utils import (
     encode_text_in_image,
     expand_user_text,
     text_to_image,
+    send_telegram_message,
 )
 
 app = FastAPI()
@@ -124,3 +125,18 @@ async def decode_text(img_url: str = None, file: UploadFile = File(None)):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# FastAPI endpoint to send a message
+@app.post("/send-message")
+async def send_message(img_url: str, caption: str):
+
+    response = send_telegram_message(img_url, caption)
+
+    if response.get("ok"):
+        return {"status": "Message sent successfully", "response": response}
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to send message: {response.get('description')}",
+        )

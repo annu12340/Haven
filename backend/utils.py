@@ -1,10 +1,12 @@
-import os
-
 import google.generativeai as genai
-from dotenv import load_dotenv
-from PIL import Image
 
+from PIL import Image
+import requests
 from backend.prompts import USER_POST_TEXT_EXPANSION_PROMPT
+from fastapi import HTTPException
+
+from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
@@ -115,3 +117,27 @@ def decode_text_from_image(image: Image.Image) -> str:
 
     # If no end marker is found, return an empty string
     return ""
+
+
+def send_telegram_message(image_url: str, caption: str):
+    bot_token = os.getenv("TELEGRAM_API_KEY")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+
+    if not bot_token or not chat_id:
+        raise HTTPException(
+            status_code=500,
+            detail="Bot token or chat ID not found in environment variables",
+        )
+
+    # Use the sendPhoto method to send an image with a caption
+    url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
+    data = {"chat_id": chat_id, "photo": image_url, "caption": caption}
+    response = requests.post(url, data=data)
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=response.json().get("description", "Failed to send photo"),
+        )
+
+    return response.json()
