@@ -3,3 +3,4 @@
 google-api.json
 encoded_image.png
 backend/__pycache__/*
+__pycache__/*
