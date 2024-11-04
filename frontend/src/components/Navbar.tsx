@@ -12,7 +12,12 @@ async function Navbar() {
       <Link href={'/'}>Logo</Link>
       <div className="flex items-center justify-center gap-6">
         <Link href="/">Home</Link>
-        <Link href="/create-post">Create Post</Link>
+        {!user?.unsafeMetadata.isAdmin && (
+          <Link href="/create-post">Create Post</Link>
+        )}
+        {(user?.unsafeMetadata as { isAdmin: boolean })?.isAdmin && (
+          <Link href="/dashboard">Dashboard</Link>
+        )}
         <Link href="/guidelines">Guidelines</Link>
         <Link href="/about">About Us</Link>
       </div>

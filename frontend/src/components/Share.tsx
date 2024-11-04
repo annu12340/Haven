@@ -4,14 +4,25 @@ import { ShareIcon } from 'lucide-react';
 
 interface ShareProps {
   imageURL: string;
+  setShared: (shared: boolean) => void;
 }
 
-function Share({ imageURL }: ShareProps) {
+function Share({ imageURL, setShared }: ShareProps) {
+  const handleShare = async () => {
+    // Share on Telegram
+    console.log('Sharing on Telegram');
+    setShared(true);
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center gap-3 -mt-[70px]">
+    <div className="flex flex-col items-center gap-3">
       <img src={imageURL} alt="Generated Image" className="rounded-md" />
       <div className="flex items-center gap-4">
-        <Button variant="default" className="flex items-center gap-2">
+        <Button
+          variant="default"
+          className="flex items-center gap-2"
+          onClick={handleShare}
+        >
           <ShareIcon size={24} />
           Share on Telegram
         </Button>

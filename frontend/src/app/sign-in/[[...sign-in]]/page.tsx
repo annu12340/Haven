@@ -3,72 +3,114 @@
 import * as React from 'react';
 import { useSignIn } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import Link from 'next/link';
+
+const SignInSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+type SignInFormValues = z.infer<typeof SignInSchema>;
 
 export default function SignInForm() {
   const { isLoaded, signIn, setActive } = useSignIn();
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
   const router = useRouter();
 
-  // Handle the submission of the sign-in form
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const form = useForm<SignInFormValues>({
+    resolver: zodResolver(SignInSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
-    if (!isLoaded) {
-      return;
-    }
+  const handleSubmit = async (data: SignInFormValues) => {
+    if (!isLoaded) return;
 
-    // Start the sign-in process using the email and password provided
     try {
       const signInAttempt = await signIn.create({
-        identifier: email,
-        password,
+        identifier: data.email,
+        password: data.password,
       });
 
-      // If sign-in process is complete, set the created session as active
-      // and redirect the user
       if (signInAttempt.status === 'complete') {
         await setActive({ session: signInAttempt.createdSessionId });
         router.push('/');
       } else {
-        // If the status is not complete, check why. User may need to
-        // complete further steps.
         console.error(JSON.stringify(signInAttempt, null, 2));
       }
-    } catch (err: unknown) {
-      // See https://clerk.com/docs/custom-flows/error-handling
-      // for more info on error handling
+    } catch (err) {
       console.error(JSON.stringify(err, null, 2));
     }
   };
 
-  // Display a form to capture the user's email and password
   return (
-    <>
-      <h1>Sign in</h1>
-      <form onSubmit={(e) => handleSubmit(e)}>
-        <div>
-          <label htmlFor="email">Enter email address</label>
-          <input
-            onChange={(e) => setEmail(e.target.value)}
-            id="email"
+    <div className="h-screen flex flex-col items-center justify-center gap-5 -mt-[100px]">
+      <h1 className="text-2xl font-semibold">Sign In</h1>
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(handleSubmit)}
+          className="space-y-4 max-w-xl w-full"
+        >
+          <FormField
+            control={form.control}
             name="email"
-            type="email"
-            value={email}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email Address</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <div>
-          <label htmlFor="password">Enter password</label>
-          <input
-            onChange={(e) => setPassword(e.target.value)}
-            id="password"
+          <FormField
+            control={form.control}
             name="password"
-            type="password"
-            value={password}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input
+                    type="password"
+                    placeholder="Enter your password"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-        <button type="submit">Sign in</button>
-      </form>
-    </>
+          <div className="flex items-center justify-between">
+            <Button type="submit">Sign in</Button>
+            <Link
+              href="/sign-up"
+              className="text-blue-500 underline hover:text-blue-700"
+            >
+              Don&apos;t have an account?
+            </Link>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 }

@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { SignUpButton, useSignIn } from '@clerk/nextjs';
+import { SignInButton, useSignIn } from '@clerk/nextjs';
 import { OAuthStrategy } from '@clerk/types';
 
 export function LoginDropdown() {
@@ -37,9 +37,9 @@ export function LoginDropdown() {
         <DropdownMenuCheckboxItem onClick={() => signInWith('oauth_google')}>
           Individual
         </DropdownMenuCheckboxItem>
-        <SignUpButton>
+        <SignInButton>
           <DropdownMenuCheckboxItem>Govt Official</DropdownMenuCheckboxItem>
-        </SignUpButton>
+        </SignInButton>
       </DropdownMenuContent>
     </DropdownMenu>
   );

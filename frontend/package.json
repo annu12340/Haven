@@ -10,7 +10,11 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.1.0",
+    "@emotion/react": "^11.13.3",
+    "@emotion/styled": "^11.13.0",
     "@hookform/resolvers": "^3.9.1",
+    "@mui/icons-material": "^6.1.6",
+    "@mui/material": "^6.1.6",
     "@radix-ui/react-dropdown-menu": "^2.1.2",
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-slot": "^1.1.0",
@@ -25,6 +29,7 @@
     "react": "19.0.0-rc-02c0e824-20241028",
     "react-dom": "19.0.0-rc-02c0e824-20241028",
     "react-hook-form": "^7.53.1",
+    "react-hot-toast": "^2.4.1",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.23.8"

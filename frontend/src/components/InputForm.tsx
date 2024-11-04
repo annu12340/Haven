@@ -55,20 +55,21 @@ export function InputForm({ setResImage }: InputFormProps) {
     },
   });
 
-  const getUserLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-
-          form.setValue('location', `Lat: ${latitude}, Lon: ${longitude}`);
-        },
-        (error) => {
-          console.error('Error getting user location:', error);
+  const getUserLocation = async () => {
+    try {
+      const res = await axios.post(
+        `https://www.googleapis.com/geolocation/v1/geolocate?key=${process.env.NEXT_PUBLIC_GEOLOCATION_API}`,
+        {
+          // Optional fields to improve accuracy:
+          considerIp: true,
         }
       );
-    } else {
-      console.error('Geolocation is not supported by this browser.');
+
+      const { location } = res.data;
+      const latLon = `Lat: ${location.lat}, Lon: ${location.lng}`;
+      form.setValue('location', latLon);
+    } catch (error) {
+      console.error('Error fetching location from Google API:', error);
     }
   };
 
@@ -86,7 +87,7 @@ export function InputForm({ setResImage }: InputFormProps) {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="max-w-2xl mx-auto space-y-6 w-full -mt-14"
+        className="max-w-2xl mx-auto space-y-6 w-full"
       >
         <FormField
           control={form.control}

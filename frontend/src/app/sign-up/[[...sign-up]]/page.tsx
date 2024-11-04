@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useSignUp } from '@clerk/nextjs';
+import { useSignUp, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -16,6 +16,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import toast from 'react-hot-toast';
 
 // Extend the schema to include name and phone number fields
 const SignUpSchema = z.object({
@@ -31,7 +32,10 @@ type SignUpFormValues = z.infer<typeof SignUpSchema>;
 export default function Page() {
   const { isLoaded, signUp, setActive } = useSignUp();
   // const { user } = useAuth();
+  const { user } = useUser();
   const [verifying, setVerifying] = React.useState(false);
+  const [needsMetadataUpdate, setNeedsMetadataUpdate] = React.useState(false);
+
   const router = useRouter();
 
   const form = useForm<SignUpFormValues>({
@@ -53,8 +57,9 @@ export default function Page() {
       await signUp.create({
         emailAddress: data.emailAddress,
         password: data.password,
-        firstName: data.name, // Clerk supports adding name fields like firstName
-        phoneNumber: data.phoneNumber,
+        // split name into first and last name
+        firstName: data.name.split(' ')[0],
+        lastName: data.name.split(' ')[1],
       });
 
       // Send email verification code
@@ -78,7 +83,10 @@ export default function Page() {
 
       if (signUpAttempt.status === 'complete') {
         await setActive({ session: signUpAttempt.createdSessionId });
+        console.log(user);
+        setNeedsMetadataUpdate(true);
 
+        toast.success('Sign up successful!'); // Display success message
         router.push('/');
       } else {
         console.error(JSON.stringify(signUpAttempt, null, 2));
@@ -87,6 +95,28 @@ export default function Page() {
       console.error('Error:', JSON.stringify(err, null, 2));
     }
   };
+
+  React.useEffect(() => {
+    // Update metadata once user becomes available and needs update
+    if (user && needsMetadataUpdate) {
+      user
+        .update({
+          unsafeMetadata: {
+            phone: form.getValues('phoneNumber'),
+            isAdmin: true,
+          },
+        })
+        .then(() => {
+          setNeedsMetadataUpdate(false); // Reset flag
+        })
+        .catch((err) => {
+          console.error(
+            'Failed to update metadata:',
+            JSON.stringify(err, null, 2)
+          );
+        });
+    }
+  }, [user, needsMetadataUpdate, form]);
 
   if (verifying) {
     return (

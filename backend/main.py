@@ -3,11 +3,20 @@ import requests
 from io import BytesIO
 from fastapi.responses import StreamingResponse
 from PIL import Image
-
-from  backend.utils import expand_user_text, text_to_image, decode_text_from_image, encode_text_in_image
-from  backend.schema import PostInfo
+from fastapi.middleware.cors import CORSMiddleware
+from  utils import expand_user_text, text_to_image, decode_text_from_image, encode_text_in_image
+from  schema import PostInfo
 
 app = FastAPI()
+
+# Set up CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Replace with your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/text-generation")
 async def get_post_and_expand_its_content(post_info: PostInfo):
