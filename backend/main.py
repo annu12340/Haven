@@ -1,11 +1,18 @@
-from fastapi import FastAPI, HTTPException, File, UploadFile, Depends
-import requests
 from io import BytesIO
+
+import requests
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from PIL import Image
-from fastapi.middleware.cors import CORSMiddleware
-from  backend.utils import expand_user_text, text_to_image, decode_text_from_image, encode_text_in_image
-from  backend.schema import PostInfo
+
+from backend.schema import PostInfo
+from backend.utils import (
+    decode_text_from_image,
+    encode_text_in_image,
+    expand_user_text,
+    text_to_image,
+)
 
 app = FastAPI()
 
@@ -17,6 +24,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.post("/text-generation")
 async def get_post_and_expand_its_content(post_info: PostInfo):
@@ -34,7 +42,10 @@ async def get_post_and_expand_its_content(post_info: PostInfo):
         # Return the expanded text as the help message
         return {"expanded_help_message": expanded_text}
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Error processing input or calling Gemini API\n Error:-  {e}") from e
+        raise HTTPException(
+            status_code=500,
+            detail="Error processing input or calling Gemini API\n Error:-  {e}",
+        ) from e
 
 
 @app.post("/img-generation")
@@ -45,25 +56,32 @@ async def create_image_from_prompt(input_data: str):
 
         return {"received_text": prompt}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred while processing the input\n Error:- {e}") from e
+        raise HTTPException(
+            status_code=500,
+            detail=f"An error occurred while processing the input\n Error:- {e}",
+        ) from e
+
 
 @app.post("/encode")
 async def encode_text(text: str, img_url: str = None, file: UploadFile = File(None)):
     try:
         # Ensure only one image source is provided
         if bool(img_url) == bool(file):
-            raise HTTPException(status_code=400, detail="Please provide either an image URL or an image file, but not both.")
-        
+            raise HTTPException(
+                status_code=400,
+                detail="Please provide either an image URL or an image file, but not both.",
+            )
+
         # Load the image from URL or uploaded file
         if img_url:
             response = requests.get(img_url)
             image = Image.open(BytesIO(response.content))
         elif file:
             image = Image.open(file.file)
-        
+
         # Encode the text into the image
         encoded_image = encode_text_in_image(image, text)
-        
+
         # Save the encoded image to a temporary file
         output_path = "encoded_image.png"
         encoded_image.save(output_path, format="PNG")
@@ -72,19 +90,26 @@ async def encode_text(text: str, img_url: str = None, file: UploadFile = File(No
         file = open(output_path, "rb")
 
         # Stream the file as a downloadable response
-        return StreamingResponse(file, media_type="image/png", headers={"Content-Disposition": "attachment; filename=encoded_image.png"})
+        return StreamingResponse(
+            file,
+            media_type="image/png",
+            headers={"Content-Disposition": "attachment; filename=encoded_image.png"},
+        )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 
 @app.post("/decode")
 async def decode_text(img_url: str = None, file: UploadFile = File(None)):
     try:
         if bool(img_url) == bool(file):
             # Raise error if both or neither are provided
-            raise HTTPException(status_code=400, detail="Please provide either an image URL or an image file, but not both.")
-        
+            raise HTTPException(
+                status_code=400,
+                detail="Please provide either an image URL or an image file, but not both.",
+            )
+
         if img_url:
             # Get image from URL
             response = requests.get(img_url)

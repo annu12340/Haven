@@ -1,4 +1,4 @@
-USER_POST_TEXT_EXPANSION_PROMPT ="""
+USER_POST_TEXT_EXPANSION_PROMPT = """
 Data in the following format is given:-
 Location: [User Input Location]
 Culprit Information: [User Input Culprit Info]
