@@ -5,16 +5,14 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from PIL import Image
-import tweepy, requests
+
 from backend.schema import PostInfo
-from backend.utils import (
-    decode_text_from_image,
-    encode_text_in_image,
+from backend.utils.text_llm import (
     expand_user_text,
     text_to_image,
-    send_telegram_message,
-    read_telegram_message,
 )
+from backend.utils.twitter import send_message_to_twitter
+from backend.utils.steganograpy import decode_text_from_image, encode_text_in_image
 
 app = FastAPI()
 
@@ -130,53 +128,7 @@ async def decode_text(img_url: str = None, file: UploadFile = File(None)):
 
 @app.post("/send-message")
 async def send_message(image_url: str, caption: str):
-    CONSUMER_KEY = os.getenv("TWITTER_CONSUMER_KEY")
-    CONSUMER_SECRET = os.getenv("TWITTER_CONSUMER_SECRET")
-    ACCESS_KEY = os.getenv("TWITTER_ACCESS_TOKEN")
-    ACCESS_SECRET = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
-    BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
-
-    # Authenticate to Twitter
-    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-    auth.set_access_token(
-        ACCESS_KEY,
-        ACCESS_SECRET,
-    )
-    newapi = tweepy.Client(
-        bearer_token=BEARER_TOKEN,
-        access_token=ACCESS_KEY,
-        access_token_secret=ACCESS_SECRET,
-        consumer_key=CONSUMER_KEY,
-        consumer_secret=CONSUMER_SECRET,
-    )
-
-    api = tweepy.API(auth)
-    # Download the image from the URL
-    image_response = requests.get(image_url)
-
-    if image_response.status_code != 200:
-        raise HTTPException(status_code=400, detail="Failed to download the image")
-
-    # Save the image to a temporary file
-    image_path = "temp_image.png"
-    with open(image_path, "wb") as file:
-        file.write(image_response.content)
-
-    try:
-        # Upload the media using the v1.1 API
-        media = api.media_upload(image_path)
-
-        # Create the tweet using the v2 API
-        post_result = newapi.create_tweet(text=caption, media_ids=[media.media_id])
-        return {"message": "Tweet posted successfully", "data": post_result}
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    finally:
-        # Clean up the temporary image file
-        if os.path.exists(image_path):
-            os.remove(image_path)
+    send_message_to_twitter(image_url, caption)
 
 
 # @app.post("/read-message")
