@@ -5,7 +5,7 @@ backend/.env
 google-api.json
 backend/encoded_image.png
 backend/__pycache__/*
-backend/__pycache__
-
+backend/__pycache__/
+backend/utils/__pycache__/*
 frontend/.env.local
 frontend/node_modules
