@@ -7,6 +7,8 @@ from fastapi import HTTPException
 
 from dotenv import load_dotenv
 import os
+from telethon.sync import TelegramClient
+from telethon.tl.types import MessageMediaPhoto
 
 load_dotenv()
 
@@ -141,3 +143,32 @@ def send_telegram_message(image_url: str, caption: str):
         )
 
     return response.json()
+
+
+# async def read_telegram_message():
+#     async with TelegramClient('session_name', api_id, api_hash) as client:
+async def read_telegram_message():
+    api_id = os.getenv("TELEGRAM_APP_ID")
+    api_hash = os.getenv("TELEGRAM_APP_HASH")
+    channel_username = os.getenv("TELEGRAM_CHANNEL_URL")
+
+    async with TelegramClient("session_name", api_id, api_hash) as client:
+        # Get the channel entity
+        channel = client.get_entity(channel_username)
+
+        # Fetch messages from the channel
+        messages = client.get_messages(channel, limit=10)  # Adjust limit as needed
+
+        for message in messages:
+            # Check if the message has media (photo) and a caption
+            if isinstance(message.media, MessageMediaPhoto):
+                # Download the photo
+                file_path = client.download_media(
+                    message.media, file="image.jpg"
+                )  # Customize filename or directory as needed
+                print("Image saved to:", file_path)
+
+                # Get the caption
+                caption = message.message if message.message else "No caption"
+                print("Caption:", caption)
+    return "caption"

@@ -4,6 +4,8 @@
 Steps to start the backend
 
 ```
+.\.venv\Scripts\Activate  (windows)
+
 pip install -r requirementx.txt
 fastapi dev backend/main.py
 

@@ -13,6 +13,7 @@ from backend.utils import (
     expand_user_text,
     text_to_image,
     send_telegram_message,
+    read_telegram_message,
 )
 
 app = FastAPI()
@@ -135,6 +136,20 @@ async def send_message(img_url: str, caption: str):
 
     if response.get("ok"):
         return {"status": "Message sent successfully", "response": response}
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to send message: {response.get('description')}",
+        )
+
+
+@app.post("/read-message")
+async def read_message():
+
+    response = await read_telegram_message()
+
+    if response.get("ok"):
+        return {"status": "Message read successfully", "response": response}
     else:
         raise HTTPException(
             status_code=400,
