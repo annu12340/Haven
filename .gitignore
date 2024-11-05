@@ -4,8 +4,8 @@
 backend/.env
 google-api.json
 backend/encoded_image.png
-backend/backend/__pycache__/*
 backend/__pycache__/*
+backend/__pycache__
 
 frontend/.env.local
 frontend/node_modules

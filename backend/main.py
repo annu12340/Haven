@@ -1,11 +1,11 @@
 from io import BytesIO
-
+import os
 import requests
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from PIL import Image
-
+import tweepy, requests
 from backend.schema import PostInfo
 from backend.utils import (
     decode_text_from_image,
@@ -128,30 +128,66 @@ async def decode_text(img_url: str = None, file: UploadFile = File(None)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# FastAPI endpoint to send a message
 @app.post("/send-message")
-async def send_message(img_url: str, caption: str):
+async def send_message(image_url: str, caption: str):
+    CONSUMER_KEY = os.getenv("TWITTER_CONSUMER_KEY")
+    CONSUMER_SECRET = os.getenv("TWITTER_CONSUMER_SECRET")
+    ACCESS_KEY = os.getenv("TWITTER_ACCESS_TOKEN")
+    ACCESS_SECRET = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
+    BEARER_TOKEN = os.getenv("TWITTER_BEARER_TOKEN")
 
-    response = send_telegram_message(img_url, caption)
+    # Authenticate to Twitter
+    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+    auth.set_access_token(
+        ACCESS_KEY,
+        ACCESS_SECRET,
+    )
+    newapi = tweepy.Client(
+        bearer_token=BEARER_TOKEN,
+        access_token=ACCESS_KEY,
+        access_token_secret=ACCESS_SECRET,
+        consumer_key=CONSUMER_KEY,
+        consumer_secret=CONSUMER_SECRET,
+    )
 
-    if response.get("ok"):
-        return {"status": "Message sent successfully", "response": response}
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Failed to send message: {response.get('description')}",
-        )
+    api = tweepy.API(auth)
+    # Download the image from the URL
+    image_response = requests.get(image_url)
+
+    if image_response.status_code != 200:
+        raise HTTPException(status_code=400, detail="Failed to download the image")
+
+    # Save the image to a temporary file
+    image_path = "temp_image.png"
+    with open(image_path, "wb") as file:
+        file.write(image_response.content)
+
+    try:
+        # Upload the media using the v1.1 API
+        media = api.media_upload(image_path)
+
+        # Create the tweet using the v2 API
+        post_result = newapi.create_tweet(text=caption, media_ids=[media.media_id])
+        return {"message": "Tweet posted successfully", "data": post_result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    finally:
+        # Clean up the temporary image file
+        if os.path.exists(image_path):
+            os.remove(image_path)
 
 
-@app.post("/read-message")
-async def read_message():
+# @app.post("/read-message")
+# async def read_message():
 
-    response = await read_telegram_message()
+#     response = await read_telegram_message()
 
-    if response.get("ok"):
-        return {"status": "Message read successfully", "response": response}
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Failed to send message: {response.get('description')}",
-        )
+#     if response.get("ok"):
+#         return {"status": "Message read successfully", "response": response}
+#     else:
+#         raise HTTPException(
+#             status_code=400,
+#             detail=f"Failed to send message: {response.get('description')}",
+#         )
