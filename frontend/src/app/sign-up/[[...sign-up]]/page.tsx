@@ -83,7 +83,7 @@ export default function Page() {
 
       if (signUpAttempt.status === 'complete') {
         await setActive({ session: signUpAttempt.createdSessionId });
-        console.log(user);
+        // console.log(user);
         setNeedsMetadataUpdate(true);
 
         toast.success('Sign up successful!'); // Display success message
