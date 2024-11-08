@@ -22,7 +22,7 @@ a.anchor-tag-reset {
   column-gap: inherit;
 }
 
-/* 
+/*
 issue: button, spans etc has a width or padding, and when link is added to it, the click on white space doesnt redirect to the link url
 to fix: i have added a pseudo selector ::before so that it takes whole width of the element.
 !UPDATE: THIS DOESNT WORK WHILE NESTED CASES EXIST (LINK GIVEN TO PARENT DIV AND A BUTTON WITH LINK EXIST INSIDE IT)
@@ -97,8 +97,8 @@ strong {
   margin-left: auto;
 }
 
-/* :not(.content-editor) div[name="Span"] :not(:first-child), 
-:not(.content-editor) div[name="Paragraph"] :not(:first-child), 
+/* :not(.content-editor) div[name="Span"] :not(:first-child),
+:not(.content-editor) div[name="Paragraph"] :not(:first-child),
 :not(.content-editor) div[name="Link"] :not(:first-child) {
   margin-top: 16px;
 } */
@@ -147,9 +147,9 @@ strong {
 
 /* .rgl-bg-canvas {
   background-color: #e7eaf0;
-  /* margin-left: 0px; 
+  /* margin-left: 0px;
   position: relative;
- 
+
   width: 100%;
   height: 40px;
   display: flex;
@@ -725,7 +725,7 @@ select::-ms-expand {
 }
 
 /* toggle switch */
-/* 
+/*
 input.v1checkbox-switch:where([type="checkbox"]) {
   -webkit-appearance: none;
   -moz-appearance: none;

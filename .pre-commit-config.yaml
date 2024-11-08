@@ -7,19 +7,19 @@ repos:
       - id: trailing-whitespace
       - id: check-merge-conflict  # Detect merge conflict markers
 
-  - repo: https://github.com/psf/black
-    rev: 22.10.0
-    hooks:
-      - id: black
-        language_version: python3  # Specify Python version
+#   - repo: https://github.com/psf/black
+#     rev: 22.10.0
+#     hooks:
+#       - id: black
+#         language_version: python3  # Specify Python version
 
-  # - repo: https://github.com/pre-commit/mirrors-isort
-  #   rev: v5.10.1
-  #   hooks:
-  #     - id: isort
-  #       name: isort (Python import sorter)
+#   # - repo: https://github.com/pre-commit/mirrors-isort
+#   #   rev: v5.10.1
+#   #   hooks:
+#   #     - id: isort
+#   #       name: isort (Python import sorter)
 
-  # - repo: https://github.com/pre-commit/mirrors-pylint
-  #   rev: v3.0.0a5
-  #   hooks:
-  #     - id: pylint
+#   # - repo: https://github.com/pre-commit/mirrors-pylint
+#   #   rev: v3.0.0a5
+#   #   hooks:
+#   #     - id: pylint
