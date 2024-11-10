@@ -1,13 +1,14 @@
 from io import BytesIO
 
 import requests
-from db import get_database
 from bson import ObjectId
-from fastapi import  FastAPI, File, HTTPException, UploadFile
+from db import get_database
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from PIL import Image
 from schema import PostInfo
+from utils.embedding import find_top_matches, generate_text_embedding
 from utils.steganograpy import decode_text_from_image, encode_text_in_image
 from utils.text_llm import decompose_user_text, expand_user_text, text_to_image
 from utils.twitter import send_message_to_twitter
@@ -154,21 +155,20 @@ async def send_message(image_url: str, caption: str):
     send_message_to_twitter(image_url, caption)
 
 
-# @app.post("/read-message")
-# async def read_message():
+@app.post("/read-message")
+async def read_message():
 
-#     response = await read_telegram_message()
+    response = await read_telegram_message()
 
-#     if response.get("ok"):
-#         return {"status": "Message read successfully", "response": response}
-#     else:
-#         raise HTTPException(
-#             status_code=400,
-#             detail=f"Failed to send message: {response.get('description')}",
-#         )
+    if response.get("ok"):
+        return {"status": "Message read successfully", "response": response}
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to send message: {response.get('description')}",
+        )
 
 # create a new endpoint to handle get all posts
-
 @app.get("/get-all-posts")
 def get_all_posts():
     try:
@@ -178,6 +178,34 @@ def get_all_posts():
         return JSONResponse(content=all_posts)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
+# Function to convert ObjectId to string
+def serialize_object_id(document):
+    """Convert ObjectId to string in MongoDB document."""
+    if isinstance(document, dict):
+        for key, value in document.items():
+            if isinstance(value, ObjectId):
+                document[key] = str(value)  # Convert ObjectId to string
+            elif isinstance(value, dict):
+                document[key] = serialize_object_id(value)
+    return document
+
+@app.get("/find-match")
+def get_top_matchs(info: str):
+    # Assuming `generate_text_embedding` returns an embedding for the given description
+    collection = db["complains2"]
+    description_vector = generate_text_embedding(info)
+
+    # Get top matches from MongoDB
+    top_matches = find_top_matches(collection, description_vector)
+
+    # Serialize any ObjectId fields in the matches
+    serialized_matches = [serialize_object_id(match) for match in top_matches]
+
+    # Return the serialized results
+    return serialized_matches
 
 # create a new endpoint to handle get post by id
 @app.get("/get-post/{post_id}")
@@ -190,4 +218,4 @@ def get_post_by_id(post_id: str):
         else:
             raise HTTPException(status_code=404, detail="Post not found")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) 
+        raise HTTPException(status_code=500, detail=str(e))
