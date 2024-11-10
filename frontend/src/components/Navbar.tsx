@@ -20,7 +20,7 @@ function Navbar() {
         href={'/'}
         className="font-bold text-lg hover:text-blue-500 transition-colors duration-200"
       >
-        Logo
+        SupportSafe
       </Link>
       <div className="flex items-center justify-center gap-6">
         <Link
