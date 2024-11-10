@@ -2,6 +2,7 @@ from io import BytesIO
 
 import requests
 from db import get_database
+from bson import ObjectId
 from fastapi import  FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -176,3 +177,16 @@ def get_all_posts():
         return JSONResponse(content=all_posts)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# create a new endpoint to handle get post by id
+@app.get("/get-post/{post_id}")
+def get_post_by_id(post_id: str):
+    try:
+        collection = db["posts"]
+        post = collection.find_one({"_id": ObjectId(post_id)})
+        if post:
+            return JSONResponse(content=serialize_post(post))
+        else:
+            raise HTTPException(status_code=404, detail="Post not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) 
