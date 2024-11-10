@@ -104,7 +104,7 @@ export function InputForm({ setResImage }: InputFormProps) {
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     try {
-      const res = await axios.post('/api/generate-image', data);
+      const res = await axios.post('/api/generate-text', data);
       setResImage(res.data.url);
       console.log('Image generated:', res.data.url);
     } catch (e) {
@@ -343,7 +343,7 @@ export function InputForm({ setResImage }: InputFormProps) {
             </FormItem>
           )}
         />
-        <Button type="submit">Generate Image</Button>
+        <Button type="submit">Generate Text</Button>
       </form>
     </Form>
   );

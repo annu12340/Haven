@@ -2,6 +2,7 @@ from io import BytesIO
 
 import requests
 from db import get_database
+from bson import ObjectId
 from fastapi import  FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -167,6 +168,7 @@ async def send_message(image_url: str, caption: str):
 #         )
 
 # create a new endpoint to handle get all posts
+
 @app.get("/get-all-posts")
 def get_all_posts():
     try:
@@ -186,3 +188,15 @@ def get_top_matchs(info):
      print("Text:", match.get("culprit"))  # Replace with the actual text field name
      print("culprit_embedding:", match.get("culprit_embedding")[:10])  # Optional
     return top_matches
+# create a new endpoint to handle get post by id
+@app.get("/get-post/{post_id}")
+def get_post_by_id(post_id: str):
+    try:
+        collection = db["posts"]
+        post = collection.find_one({"_id": ObjectId(post_id)})
+        if post:
+            return JSONResponse(content=serialize_post(post))
+        else:
+            raise HTTPException(status_code=404, detail="Post not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

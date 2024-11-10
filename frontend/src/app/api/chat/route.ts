@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY; // Load your API key from environment variables
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY; // Load your API key from environment variables
 
 export async function POST(req: Request) {
   try {
     const { userInput } = await req.json();
 
     // Initialize the Google Generative AI client
-    const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY!);
+    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY!);
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     // Call the model to generate content based on user input
