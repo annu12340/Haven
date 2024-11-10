@@ -1,14 +1,17 @@
-from pymongo import MongoClient
-from dotenv import load_dotenv
 import os
-from utils.embedding import generate_text_embedding
+
+from dotenv import load_dotenv
+from pymongo import MongoClient
 # Load environment variables
 from pymongo.operations import SearchIndexModel
+from utils.embedding import generate_text_embedding
+
 load_dotenv()
 print("MONGO_ENDPOINT:", os.getenv("MONGO_ENDPOINT"))
 
 # Initialize db_client as None globally to cache the connection
 db_client = None
+
 
 def get_database():
     """
@@ -26,7 +29,10 @@ def get_database():
             return None
     return db_client["SheBuilds"]
 
-def insert_data_into_db(name, location, contact_info, severity, culprit, relationship_to_culprit, other_info):
+
+def insert_data_into_db(
+    name, location, contact_info, severity, culprit, relationship_to_culprit, other_info
+):
     """
     Inserts a document into the 'posts' collection of the MongoDB database.
     Reuses the cached database connection.
@@ -43,11 +49,11 @@ def insert_data_into_db(name, location, contact_info, severity, culprit, relatio
         "contact_info": contact_info,
         "severity": severity,
         "culprit": culprit,
-        "relationship_to_culprit":relationship_to_culprit,
+        "relationship_to_culprit": relationship_to_culprit,
         "other_info": other_info,
     }
-    culprit_embedding=generate_text_embedding(culprit)
-    document['culprit_embedding']=culprit_embedding
+    culprit_embedding = generate_text_embedding(culprit)
+    document["culprit_embedding"] = culprit_embedding
     try:
         # Insert the document into the collection
         result = collection.insert_one(document)
@@ -56,6 +62,7 @@ def insert_data_into_db(name, location, contact_info, severity, culprit, relatio
     except Exception as e:
         print("Error inserting data:", e)
         return None
+
 
 # culprit='a black eyed women who is bald'
 # insert_data_into_db('name', 'location', '', '', culprit, 'husband', '')
