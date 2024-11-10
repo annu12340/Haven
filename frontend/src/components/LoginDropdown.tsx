@@ -34,11 +34,16 @@ export function LoginDropdown() {
       <DropdownMenuContent className="w-56 mr-2">
         <DropdownMenuLabel>Login Type</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuCheckboxItem onClick={() => signInWith('oauth_google')}>
+        <DropdownMenuCheckboxItem
+          onClick={() => signInWith('oauth_google')}
+          className="cursor-pointer"
+        >
           Individual
         </DropdownMenuCheckboxItem>
         <SignInButton>
-          <DropdownMenuCheckboxItem>Govt Official</DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem className="cursor-pointer">
+            Govt Official
+          </DropdownMenuCheckboxItem>
         </SignInButton>
       </DropdownMenuContent>
     </DropdownMenu>
