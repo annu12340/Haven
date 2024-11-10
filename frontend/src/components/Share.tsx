@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from './ui/button';
 import { ShareIcon } from 'lucide-react';
+import Image from 'next/image';
 
 interface ShareProps {
   imageURL: string;
@@ -16,7 +17,17 @@ function Share({ imageURL, setShared }: ShareProps) {
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <img src={imageURL} alt="Generated Image" className="rounded-md" />
+      {/* Adjusted Image size */}
+      <div className="relative w-[500px] h-[500px]">
+        <Image
+          src={imageURL}
+          alt="Generated Image"
+          layout="fill"
+          objectFit="cover"
+          className="rounded-md"
+        />
+      </div>
+
       <div className="flex items-center gap-4">
         <Button
           variant="default"

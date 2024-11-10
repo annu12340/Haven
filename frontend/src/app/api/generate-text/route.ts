@@ -1,35 +1,29 @@
-import { NextResponse } from 'next/server';
 import axios from 'axios';
+import { NextResponse } from 'next/server';
 
-interface GenerateImageRequestData {
+interface GenerateTextRequestData {
   name: string;
   phone: string;
-  location: string;
+  location: { lat: number; lng: number };
+  occurrenceDuration: number;
+  frequency: number;
+  visibleInjuries: 'Yes' | 'No';
+  preferredContact: string[];
   culpritInfo: string;
   currentSituation: string;
 }
 
 export async function POST(req: Request) {
   try {
-    const data: GenerateImageRequestData = await req.json();
+    const data: GenerateTextRequestData = await req.json();
     console.log('received data:', data);
-    // Replace `imageGenerationAPIUrl` with your actual endpoint.
-    // const imageGenerationAPIUrl = 'https://example.com/api/generate-image';
-
-    // Set up any necessary API keys or headers.
-    // const headers = {
-    //   'Content-Type': 'application/json',
-    //   Authorization: `Bearer YOUR_API_KEY`, // Replace with your API key
-    // };
-
-    // const response = await axios.post(imageGenerationAPIUrl, data, { headers });
-    const response = {
-      data: {
-        url: 'https://img-cdn.pixlr.com/image-generator/history/65bb506dcb310754719cf81f/ede935de-1138-4f66-8ed7-44bd16efc709/medium.webp',
-      },
-    };
-    const imageUrl = response.data.url;
-    return NextResponse.json({ url: imageUrl }, { status: 200 });
+    // const res = await axios.post(
+    //   `${process.env.NEXT_PUBLIC_BACKEND_URL}/text-generation`,
+    //   data
+    // );
+    const res =
+      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi. Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat. Duis semper. Duis arcu massa, scelerisque vitae, consequat in, pretium a, enim. Pellentesque congue. Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim. Pellentesque sed ';
+    return NextResponse.json({ text: res }, { status: 200 });
   } catch (error) {
     console.error('Image generation failed:', error);
     return NextResponse.json(

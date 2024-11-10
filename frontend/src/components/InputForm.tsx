@@ -22,9 +22,6 @@ import { Slider } from './ui/slider';
 import { Textarea } from './ui/textarea';
 import { Checkbox } from './ui/checkbox';
 
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-
-const abuseTypes = ['Physical', 'Emotional', 'Sexual', 'Financial', 'Verbal'];
 const contactMethods = ['Phone', 'Email', 'Text message', 'In-person'];
 
 const FormSchema = z.object({
@@ -34,17 +31,14 @@ const FormSchema = z.object({
   phone: z.string().min(10, {
     message: 'Phone number must be at least 10 characters.',
   }),
-  location: z.string().min(2, {
-    message: 'Location must be at least 2 characters.',
+  location: z.object({
+    lat: z.number(),
+    lng: z.number(),
   }),
-  typeOfAbuse: z.array(z.string()).min(1, {
-    message: 'Please select at least one type of abuse.',
-  }),
-  immediateThreat: z.enum(['Yes', 'No']),
   occurrenceDuration: z
-    .number()
+    .string()
     .min(1, { message: 'Please specify a duration.' }),
-  frequency: z.number().min(1, { message: 'Please specify a frequency.' }),
+  frequency: z.string().min(1, { message: 'Please specify a frequency.' }),
   visibleInjuries: z.enum(['Yes', 'No']),
   preferredContact: z
     .array(z.enum(['Phone', 'Email', 'Text message', 'In-person']))
@@ -57,11 +51,11 @@ const FormSchema = z.object({
   culprit: z.string().min(5, { message: 'Please describe the culprit.' }),
 });
 
-interface InputFormProps {
-  setResImage: (resImage: string) => void;
-}
-
-export function InputForm({ setResImage }: InputFormProps) {
+// interface InputFormProps {
+//   setResImage: (resImage: string) => void;
+// }
+// { setResImage }: InputFormProps
+export function InputForm({ setText }: { setText: (resText: string) => void }) {
   const { user } = useClerk();
 
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -69,11 +63,9 @@ export function InputForm({ setResImage }: InputFormProps) {
     defaultValues: {
       name: user?.fullName || '',
       phone: '',
-      location: '',
-      typeOfAbuse: [],
-      immediateThreat: 'No',
-      occurrenceDuration: 1,
-      frequency: 1,
+      location: { lat: 0, lng: 0 }, // Default to zero coordinates
+      occurrenceDuration: '',
+      frequency: '',
       visibleInjuries: 'No',
       preferredContact: [],
       currentSituation: '',
@@ -81,32 +73,33 @@ export function InputForm({ setResImage }: InputFormProps) {
     },
   });
 
-  // States to store the current slider values
   const [occurrenceDuration, setOccurrenceDuration] = useState(1);
   const [frequency, setFrequency] = useState(1);
 
-  const getUserLocation = async () => {
-    try {
-      const res = await axios.post(
-        `https://www.googleapis.com/geolocation/v1/geolocate?key=${process.env.NEXT_PUBLIC_GEOLOCATION_API}`,
-        {
-          considerIp: true,
+  const getUserLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          // Set the location as an object with lat and lng
+          form.setValue('location', { lat: latitude, lng: longitude });
+        },
+        (error) => {
+          console.error('Error fetching location:', error);
         }
       );
-
-      const { location } = res.data;
-      const latLon = `Lat: ${location.lat}, Lon: ${location.lng}`;
-      form.setValue('location', latLon);
-    } catch (error) {
-      console.error('Error fetching location from Google API:', error);
+    } else {
+      console.error('Geolocation is not supported by this browser.');
     }
   };
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     try {
       const res = await axios.post('/api/generate-text', data);
-      setResImage(res.data.url);
-      console.log('Image generated:', res.data.url);
+      // setResImage(res.data.url);
+      // console.log('Image generated:', res.data.url);
+      console.log('Text generated:', res.data.text);
+      setText(res.data.text);
     } catch (e) {
       console.error(e);
     }
@@ -153,7 +146,8 @@ export function InputForm({ setResImage }: InputFormProps) {
               <FormControl>
                 <Input
                   placeholder="Type or auto-detect your location"
-                  {...field}
+                  value={`Lat: ${field.value.lat}, Lon: ${field.value.lng}`}
+                  readOnly
                 />
               </FormControl>
               <Button
@@ -165,35 +159,6 @@ export function InputForm({ setResImage }: InputFormProps) {
                 <LocateIcon className="h-5 w-5" />
                 Auto-detect Location
               </Button>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="typeOfAbuse"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Type of Abuse</FormLabel>
-              <FormControl>
-                <div className="space-y-2">
-                  {abuseTypes.map((type) => (
-                    <div key={type} className="flex items-center gap-2">
-                      <Checkbox
-                        checked={field.value.includes(type)}
-                        onCheckedChange={(checked) => {
-                          const newValue = checked
-                            ? [...field.value, type]
-                            : field.value.filter((item) => item !== type);
-                          field.onChange(newValue);
-                        }}
-                      />
-                      <span>{type}</span>
-                    </div>
-                  ))}
-                </div>
-              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -250,35 +215,7 @@ export function InputForm({ setResImage }: InputFormProps) {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="immediateThreat"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Immediate Threat</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormItem>
-                    <FormControl>
-                      <RadioGroupItem value="Yes" />
-                    </FormControl>
-                    <FormLabel className="font-normal ml-2">Yes</FormLabel>
-                  </FormItem>
-                  <FormItem>
-                    <FormControl>
-                      <RadioGroupItem value="No" />
-                    </FormControl>
-                    <FormLabel className="font-normal ml-2">No</FormLabel>
-                  </FormItem>
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
         <FormField
           control={form.control}
           name="preferredContact"
@@ -313,17 +250,15 @@ export function InputForm({ setResImage }: InputFormProps) {
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="currentSituation"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Current Situation</FormLabel>
+              <FormLabel>Describe the Current Situation</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Describe the current situation"
-                  {...field}
-                />
+                <Textarea placeholder="Describe the situation" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -335,14 +270,15 @@ export function InputForm({ setResImage }: InputFormProps) {
           name="culprit"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Culprit</FormLabel>
+              <FormLabel>Describe the Culprit</FormLabel>
               <FormControl>
-                <Textarea placeholder="Describe the culprit" {...field} />
+                <Textarea placeholder="Who is responsible" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+
         <Button type="submit">Generate Text</Button>
       </form>
     </Form>
