@@ -1,5 +1,5 @@
-from PIL import Image
 import requests
+from PIL import Image
 
 
 def encode_text_in_image(image: Image.Image, text: str) -> Image.Image:
