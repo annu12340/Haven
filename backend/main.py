@@ -10,7 +10,7 @@ from schema import PostInfo
 from utils.steganograpy import decode_text_from_image, encode_text_in_image
 from utils.text_llm import decompose_user_text, expand_user_text, text_to_image
 from utils.twitter import send_message_to_twitter
-
+from utils.embedding import find_top_matches, generate_text_embedding
 app = FastAPI()
 
 # Set up CORS middleware
@@ -176,3 +176,13 @@ def get_all_posts():
         return JSONResponse(content=all_posts)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/find-match")
+def get_top_matchs(info):
+    collection = db["complains2"]
+    description_vector=generate_text_embedding(info)
+    top_matches=(find_top_matches(collection,description_vector))
+    for match in top_matches:
+     print("Text:", match.get("culprit"))  # Replace with the actual text field name
+     print("culprit_embedding:", match.get("culprit_embedding")[:10])  # Optional
+    return top_matches

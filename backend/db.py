@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import os
 from utils.embedding import generate_text_embedding
 # Load environment variables
+from pymongo.operations import SearchIndexModel
 load_dotenv()
 print("MONGO_ENDPOINT:", os.getenv("MONGO_ENDPOINT"))
 
@@ -35,7 +36,7 @@ def insert_data_into_db(name, location, contact_info, severity, culprit, relatio
         print("Database connection is not available.")
         return None
 
-    collection = db["posts"]
+    collection = db["complains2"]
     document = {
         "name": name,
         "location": location,
@@ -56,7 +57,7 @@ def insert_data_into_db(name, location, contact_info, severity, culprit, relatio
         print("Error inserting data:", e)
         return None
 
-# culprit='dark skinned man. He had a tatto is on right arm. He was bald.'
+# culprit='a black eyed women who is bald'
 # insert_data_into_db('name', 'location', '', '', culprit, 'husband', '')
 # # insert sample data into the database with some random location as {lat, lng}
 # insert_data_into_db("Alice", {"lat": 37.7749, "lng": -122.4194}, "High", "Broken window", "Needs urgent repair")
