@@ -52,3 +52,8 @@ def insert_data_into_db(name, location, severity, issue, other_info):
     except Exception as e:
         print("Error inserting data:", e)
         return None
+
+# # insert sample data into the database with some random location as {lat, lng}
+# insert_data_into_db("Alice", {"lat": 37.7749, "lng": -122.4194}, "High", "Broken window", "Needs urgent repair")    
+# insert_data_into_db("Bob", {"lat": 37.7749, "lng": -122.4194}, "Low", "Leaky faucet", "Minor issue")    
+# insert_data_into_db("Charlie", {"lat": 37.7749, "lng": -122.4194}, "Medium", "Faulty wiring", "Needs inspection")

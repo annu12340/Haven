@@ -11,7 +11,7 @@ async function Page() {
   }
 
   return (
-    <div className="h-screen flex flex-col justify-center items-center gap-4">
+    <div className=" flex flex-col justify-center mx-auto max-w-5xl w-full p-4">
       <LiveTitle />
       <RealtimeList />
     </div>
