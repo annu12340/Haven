@@ -1,22 +1,15 @@
 from io import BytesIO
-import os
-import requests
-from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
-from PIL import Image
-from fastapi import Depends                                                    
-from schema import PostInfo
-from utils.text_llm import (
-    expand_user_text,
-    text_to_image,
-    decompose_user_text,
-)
-from utils.twitter import send_message_to_twitter
-from utils.steganograpy import decode_text_from_image, encode_text_in_image
-from db import get_database 
-from fastapi.responses import JSONResponse
 
+import requests
+from db import get_database
+from fastapi import  FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, StreamingResponse
+from PIL import Image
+from schema import PostInfo
+from utils.steganograpy import decode_text_from_image, encode_text_in_image
+from utils.text_llm import decompose_user_text, expand_user_text, text_to_image
+from utils.twitter import send_message_to_twitter
 
 app = FastAPI()
 
@@ -29,15 +22,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 def get_db():
     return get_database()
 
-db=get_db()    
+
+db = get_db()
 
 # Function to convert ObjectId to string
 def serialize_post(post):
-    post['_id'] = str(post['_id'])  # Convert ObjectId to string
+    post["_id"] = str(post["_id"])  # Convert ObjectId to string
     return post
+
 
 @app.post("/text-generation")
 async def get_post_and_expand_its_content(post_info: PostInfo):
@@ -177,6 +173,6 @@ def get_all_posts():
         collection = db["posts"]
         posts = collection.find()
         all_posts = [serialize_post(post) for post in posts]
-        return JSONResponse(content=all_posts) 
+        return JSONResponse(content=all_posts)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

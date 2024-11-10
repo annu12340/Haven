@@ -1,11 +1,10 @@
-import speech_recognition as sr
-from elevenlabs import play
-from elevenlabs.client import ElevenLabs
-import google.generativeai as genai
-
-from dotenv import load_dotenv
 import os
 
+import google.generativeai as genai
+import speech_recognition as sr
+from dotenv import load_dotenv
+from elevenlabs import play
+from elevenlabs.client import ElevenLabs
 
 load_dotenv()
 
@@ -59,7 +58,6 @@ class AI_Assistant:
         ai_response = model.generate_content(f"You are my theraist")
         print(ai_response.text)
 
-
         print(colors.GREEN + "\nAI Receptionist: " + colors.END)
         print(ai_response)
         self.generate_audio(ai_response.text)
@@ -70,14 +68,10 @@ class AI_Assistant:
         #     api_key=self.elevenlabs_api_key, text=text, voice="Rachel", stream=True
         # )
         # stream(audio_stream)
-        client = ElevenLabs(
-            api_key=self.elevenlabs_api_key
-            )
+        client = ElevenLabs(api_key=self.elevenlabs_api_key)
 
         audio = client.generate(
-        text=text,
-        voice="Brian",
-        model="eleven_multilingual_v2"
+            text=text, voice="Brian", model="eleven_multilingual_v2"
         )
         play(audio)
 
