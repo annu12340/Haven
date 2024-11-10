@@ -40,8 +40,10 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <Navbar />
-            {children}
+            <div className="h-screen flex flex-col">
+              <Navbar />
+              <main className="flex flex-1 flex-col">{children}</main>
+            </div>
             <Toaster />
           </ThemeProvider>
         </body>

@@ -265,13 +265,13 @@ export function InputForm({ setResImage }: InputFormProps) {
                     <FormControl>
                       <RadioGroupItem value="Yes" />
                     </FormControl>
-                    <FormLabel className="font-normal">Yes</FormLabel>
+                    <FormLabel className="font-normal ml-2">Yes</FormLabel>
                   </FormItem>
                   <FormItem>
                     <FormControl>
                       <RadioGroupItem value="No" />
                     </FormControl>
-                    <FormLabel className="font-normal">No</FormLabel>
+                    <FormLabel className="font-normal ml-2">No</FormLabel>
                   </FormItem>
                 </RadioGroup>
               </FormControl>
