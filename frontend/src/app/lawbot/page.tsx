@@ -19,6 +19,14 @@ const ChatSchema = z.object({
 
 type ChatFormValues = z.infer<typeof ChatSchema>;
 
+const promptSuggestions = [
+  'What are my rights as a tenant?',
+  'Explain the process of filing a lawsuit.',
+  'What should I know before signing a contract?',
+  'How can I apply for a patent?',
+  'What are the laws around defamation?',
+];
+
 function Page() {
   const [messages, setMessages] = React.useState<
     {
@@ -50,15 +58,35 @@ function Page() {
     setIsThinking(false);
   };
 
+  const handlePromptClick = (prompt: string) => {
+    form.setValue('message', prompt);
+    form.handleSubmit(onSubmit)();
+  };
+
   return (
-    <div className="flex flex-col h-full items-center justify-center max-w-5xl w-full mx-auto">
-      <div className="w-full overflow-y-auto border rounded-md custom-scrollbar">
+    <div className="flex flex-col h-full items-center justify-center max-w-5xl w-full mx-auto ">
+      <div className="w-full overflow-y-auto border-2 rounded-md custom-scrollbar bg-slate-50">
         <div className="flex flex-col gap-2 h-[80vh] overflow-y-auto custom-scrollbar p-4">
           {messages.length === 0 ? (
             <div className="flex flex-col gap-3">
-              <p className="text-center font-semibold">
-                {user ? user.firstName : 'Guest'}, welcome to Law bot!
+              <p className="text-center font-semibold" suppressHydrationWarning>
+                {user ? user.firstName : <span>Guest</span>}, welcome to Law
+                bot!
               </p>
+              <div className="flex flex-col gap-2 items-center">
+                <p className="text-center">
+                  Try asking something like the below prompt!
+                </p>
+                {promptSuggestions.map((prompt, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handlePromptClick(prompt)}
+                    className="text-left text-blue-600 underline hover:text-blue-800 transition"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
             messages.map((message, index) => (
@@ -102,6 +130,11 @@ function Page() {
                     height={32}
                   />
                 )}
+                {message.isUser && !user && (
+                  <div className="rounded-full border shadow-sm h-10 w-10 flex items-center justify-center ">
+                    <h1 className="font-semibold">G</h1>
+                  </div>
+                )}
               </div>
             ))
           )}
@@ -130,6 +163,7 @@ function Page() {
         <Button
           className="border-primary border-2"
           variant="outline"
+          disabled={isThinking || !form.formState.isValid}
           type="submit"
         >
           <SendIcon />

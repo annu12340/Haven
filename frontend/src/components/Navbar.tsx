@@ -16,22 +16,31 @@ function Navbar() {
 
   return (
     <nav className="w-full h-16 p-3 flex items-center justify-between border-b shadow-sm">
-      <Link href={'/'} className="font-bold text-lg">
+      <Link
+        href={'/'}
+        className="font-bold text-lg hover:text-blue-500 transition-colors duration-200"
+      >
         Logo
       </Link>
       <div className="flex items-center justify-center gap-6">
         <Link
           href="/"
-          className={isActive('/') ? 'text-blue-500 font-semibold' : ''}
+          className={`${
+            isActive('/')
+              ? 'text-blue-500 font-semibold'
+              : 'hover:text-blue-500'
+          } transition-colors duration-200`}
         >
           Home
         </Link>
         {!user?.unsafeMetadata.isAdmin && (
           <Link
             href="/create-post"
-            className={
-              isActive('/create-post') ? 'text-blue-500 font-semibold' : ''
-            }
+            className={`${
+              isActive('/create-post')
+                ? 'text-blue-500 font-semibold'
+                : 'hover:text-blue-500'
+            } transition-colors duration-200`}
           >
             Create Post
           </Link>
@@ -39,38 +48,52 @@ function Navbar() {
         {(user?.unsafeMetadata as { isAdmin: boolean })?.isAdmin && (
           <Link
             href="/dashboard"
-            className={
-              isActive('/dashboard') ? 'text-blue-500 font-semibold' : ''
-            }
+            className={`${
+              isActive('/dashboard')
+                ? 'text-blue-500 font-semibold'
+                : 'hover:text-blue-500'
+            } transition-colors duration-200`}
           >
             Dashboard
           </Link>
         )}
         <Link
           href="/lawbot"
-          className={isActive('/lawbot') ? 'text-blue-500 font-semibold' : ''}
+          className={`${
+            isActive('/lawbot')
+              ? 'text-blue-500 font-semibold'
+              : 'hover:text-blue-500'
+          } transition-colors duration-200`}
         >
           Law Bot
         </Link>
         <Link
           href="/therapybot"
-          className={
-            isActive('/therapybot') ? 'text-blue-500 font-semibold' : ''
-          }
+          className={`${
+            isActive('/therapybot')
+              ? 'text-blue-500 font-semibold'
+              : 'hover:text-blue-500'
+          } transition-colors duration-200`}
         >
           Therapy Bot
         </Link>
         <Link
           href="/guidelines"
-          className={
-            isActive('/guidelines') ? 'text-blue-500 font-semibold' : ''
-          }
+          className={`${
+            isActive('/guidelines')
+              ? 'text-blue-500 font-semibold'
+              : 'hover:text-blue-500'
+          } transition-colors duration-200`}
         >
           Guidelines
         </Link>
         <Link
           href="/about"
-          className={isActive('/about') ? 'text-blue-500 font-semibold' : ''}
+          className={`${
+            isActive('/about')
+              ? 'text-blue-500 font-semibold'
+              : 'hover:text-blue-500'
+          } transition-colors duration-200`}
         >
           About Us
         </Link>

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@avatechai/avatars": "^0.5.1",
     "@clerk/nextjs": "^6.1.0",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
