@@ -168,6 +168,7 @@ async def send_message(image_url: str, caption: str):
 #         )
 
 # create a new endpoint to handle get all posts
+
 @app.get("/get-all-posts")
 def get_all_posts():
     try:

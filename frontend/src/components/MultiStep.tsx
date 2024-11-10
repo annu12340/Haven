@@ -9,7 +9,8 @@ import Link from 'next/link';
 
 const steps = [
   'Fill out the form',
-  'Review your post and share it',
+  'Review and Generate Image',
+  'Submit post',
   'Submission complete',
 ];
 
