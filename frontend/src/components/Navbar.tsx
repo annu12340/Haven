@@ -15,20 +15,20 @@ function Navbar() {
   const isActive = (href: string) => pathname === href;
 
   return (
-    <nav className="w-full h-16 p-3 flex items-center justify-between border-b shadow-sm">
+    <nav className="w-full h-16 p-4 flex items-center justify-between border-b shadow-sm">
       <Link
         href={'/'}
-        className="font-bold text-lg hover:text-blue-500 transition-colors duration-200"
+        className="font-bold text-2xl tracking-wide hover:text-blue-500 transition-colors duration-200"
       >
-        SupportSafe
+        Support<span className="text-blue-700">Safe</span>
       </Link>
-      <div className="flex items-center justify-center gap-6">
+      <div className="flex items-center justify-center gap-6 font-medium text-gray-600">
         <Link
           href="/"
           className={`${
             isActive('/')
-              ? 'text-blue-500 font-semibold'
-              : 'hover:text-blue-500'
+              ? 'text-blue-700 font-semibold'
+              : 'hover:text-blue-700'
           } transition-colors duration-200`}
         >
           Home
@@ -38,8 +38,8 @@ function Navbar() {
             href="/create-post"
             className={`${
               isActive('/create-post')
-                ? 'text-blue-500 font-semibold'
-                : 'hover:text-blue-500'
+                ? 'text-blue-700 font-semibold'
+                : 'hover:text-blue-700'
             } transition-colors duration-200`}
           >
             Create Post
@@ -50,8 +50,8 @@ function Navbar() {
             href="/dashboard"
             className={`${
               isActive('/dashboard')
-                ? 'text-blue-500 font-semibold'
-                : 'hover:text-blue-500'
+                ? 'text-blue-700 font-semibold'
+                : 'hover:text-blue-700'
             } transition-colors duration-200`}
           >
             Dashboard
@@ -61,8 +61,8 @@ function Navbar() {
           href="/lawbot"
           className={`${
             isActive('/lawbot')
-              ? 'text-blue-500 font-semibold'
-              : 'hover:text-blue-500'
+              ? 'text-blue-700 font-semibold'
+              : 'hover:text-blue-700'
           } transition-colors duration-200`}
         >
           Law Bot
@@ -71,8 +71,8 @@ function Navbar() {
           href="/therapybot"
           className={`${
             isActive('/therapybot')
-              ? 'text-blue-500 font-semibold'
-              : 'hover:text-blue-500'
+              ? 'text-blue-700 font-semibold'
+              : 'hover:text-blue-700'
           } transition-colors duration-200`}
         >
           Therapy Bot
@@ -81,8 +81,8 @@ function Navbar() {
           href="/guidelines"
           className={`${
             isActive('/guidelines')
-              ? 'text-blue-500 font-semibold'
-              : 'hover:text-blue-500'
+              ? 'text-blue-700 font-semibold'
+              : 'hover:text-blue-700'
           } transition-colors duration-200`}
         >
           Guidelines
@@ -91,8 +91,8 @@ function Navbar() {
           href="/about"
           className={`${
             isActive('/about')
-              ? 'text-blue-500 font-semibold'
-              : 'hover:text-blue-500'
+              ? 'text-blue-700 font-semibold'
+              : 'hover:text-blue-700'
           } transition-colors duration-200`}
         >
           About Us
