@@ -2,16 +2,19 @@ from io import BytesIO
 
 import requests
 from bson import ObjectId
-from db import get_database
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from PIL import Image
-from schema import PostInfo
-from utils.embedding import find_top_matches, generate_text_embedding
-from utils.steganograpy import decode_text_from_image, encode_text_in_image
-from utils.text_llm import decompose_user_text, expand_user_text, text_to_image
-from utils.twitter import send_message_to_twitter
+
+from backend.db import get_database
+from backend.schema import PostInfo
+from backend.utils.embedding import find_top_matches, generate_text_embedding
+from backend.utils.steganograpy import (decode_text_from_image,
+                                        encode_text_in_image)
+from backend.utils.text_llm import (decompose_user_text, expand_user_text,
+                                    text_to_image)
+from backend.utils.twitter import send_message_to_twitter
 
 app = FastAPI()
 
@@ -168,6 +171,7 @@ async def read_message():
             detail=f"Failed to send message: {response.get('description')}",
         )
 
+
 # create a new endpoint to handle get all posts
 @app.get("/get-all-posts")
 def get_all_posts():
@@ -180,7 +184,6 @@ def get_all_posts():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
 # Function to convert ObjectId to string
 def serialize_object_id(document):
     """Convert ObjectId to string in MongoDB document."""
@@ -191,6 +194,7 @@ def serialize_object_id(document):
             elif isinstance(value, dict):
                 document[key] = serialize_object_id(value)
     return document
+
 
 @app.get("/find-match")
 def get_top_matchs(info: str):
@@ -206,6 +210,7 @@ def get_top_matchs(info: str):
 
     # Return the serialized results
     return serialized_matches
+
 
 # create a new endpoint to handle get post by id
 @app.get("/get-post/{post_id}")

@@ -2,8 +2,9 @@ import os
 
 import google.generativeai as genai
 from dotenv import load_dotenv
-from prompts import (USER_POST_TEXT_DECOMPOSITION_PROMPT,
-                     USER_POST_TEXT_EXPANSION_PROMPT)
+
+from backend.prompts import (USER_POST_TEXT_DECOMPOSITION_PROMPT,
+                             USER_POST_TEXT_EXPANSION_PROMPT)
 
 load_dotenv()
 
