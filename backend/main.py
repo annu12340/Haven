@@ -22,7 +22,7 @@ app = FastAPI()
 # Set up CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Replace with your frontend URL
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -41,27 +41,33 @@ def serialize_post(post):
     return post
 
 
+
+# Endpoint to handle POST request and expand the user input
 @app.post("/text-generation")
 async def get_post_and_expand_its_content(post_info: PostInfo):
     try:
+
         concatenated_text = (
+            f"Name: {post_info.name}\n"
+            f"Phone: {post_info.phone}\n"
             f"Location: {post_info.location}\n"
-            f"Culprit Info: {post_info.culprit_info}\n"
+            f"Duration of Abuse: {post_info.duration_of_abuse}\n"
+            f"Frequency of Incidents: {post_info.frequency_of_incidents}\n"
+            f"Preferred Contact Method: {post_info.preferred_contact_method}\n"
             f"Current Situation: {post_info.current_situation}\n"
+            f"Culprit Description: {post_info.culprit_description}\n"
             f"Custom Text: {post_info.custom_text}\n"
-            f"Number: {post_info.number}"
         )
 
         expanded_text = await expand_user_text(concatenated_text)
 
-        # Return the expanded text as the help message
         return {"expanded_help_message": expanded_text}
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail="Error processing input or calling Gemini API\n Error:-  {e}",
+            detail=f"Error processing input or calling Gemini API\n Error: {e}",
         ) from e
-
 
 @app.post("/img-generation")
 async def create_image_from_prompt(input_data: str):
