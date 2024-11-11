@@ -10,6 +10,7 @@ from PIL import Image
 from backend.db import get_database
 from backend.schema import PostInfo
 from backend.utils.embedding import find_top_matches, generate_text_embedding
+from backend.utils.regex_ptr import extract_info
 from backend.utils.steganograpy import (decode_text_from_image,
                                         encode_text_in_image)
 from backend.utils.text_llm import (decompose_user_text, expand_user_text,
@@ -79,11 +80,10 @@ async def create_image_from_prompt(input_data: str):
 @app.post("/text-decomposition")
 async def get_text_and_decompse_its_content(text: str):
     try:
-        print("post_infopost_info", text)
-        decomposed_user_text = text
         decomposed_user_text = decompose_user_text(text)
-
-        return {"decomposed_user_text": decomposed_user_text}
+        print("decomposed_user_textdecomposed_user_textdecomposed_user_text",decomposed_user_text)
+        extracted_data=extract_info(decomposed_user_text)
+        return {"extracted_data": extracted_data}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
