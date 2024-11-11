@@ -1,14 +1,25 @@
 USER_POST_TEXT_EXPANSION_PROMPT = """
-Data in the following format is given:-
-Location: [User Input Location]
-Culprit Information: [User Input Culprit Info]
-Current Situation: [User Input Current Situation]
-Additional Information: [User Input Custom Text]
-Contact Number: [User Input Number]
+Generate a clear, urgent, and structured report based on the following details to help authorities understand the victim's situation and take prompt action. The report should be in the first person, highlighting the severity of the situation, the frequency of the abuse, and the danger posed by the perpetrator. The narrative should be concise and emphasize the need for immediate intervention. The report should also include the preferred method of contact to ensure a fast response.
 
-Gather critical information in a structured manner.
-Create a detailed, narrative-style message that authorities can use to understand the situation quickly and take appropriate action.
-Emphasize the urgency and seriousness of the victim's situation to facilitate a prompt response from authorities.
+Here are the inputs:
+
+Name: [User's Name]
+Phone: [User's Phone Number]
+Location: [User's Location (City, State)]
+How long has it been occurring?: [Duration of Abuse]
+Frequency of Incidents: [How often the incidents occur]
+Preferred Contact Method: [Phone, Email, Text message, In-person]
+Current Situation: [A brief description of the current situation]
+Culprit Description: [A description of the perpetrator]
+
+Use this information to generate a detailed narrative for authorities that:
+
+Identifies the immediate danger.
+Clearly conveys the urgency of the situation.
+Highlights any past incidents and patterns of abuse.
+
+The tone should be urgent and should convey the victim’s fear, making it clear that their safety is at risk.
+
 """
 
 USER_POST_TEXT_DECOMPOSITION_PROMPT = """
