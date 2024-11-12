@@ -3,7 +3,7 @@ import re
 
 def extract_info(text):
     # Define regex pattern to extract key-value pairs
-    pattern = r'(\d+)\.\s*(.*?):\s*(.*)'
+    pattern = r"(\d+)\.\s*(.*?):\s*(.*)"
 
     # Find all matches
     matches = re.findall(pattern, text)

@@ -63,6 +63,6 @@ Include any other relevant information that provides additional context.
 Note: Use "Not specified" if a detail is missing from the text.
 """
 
-INSPIRATION_POEM_PROMPT="""
+INSPIRATION_POEM_PROMPT = """
 Write a short, empowering poem (around 50 words) to inspire women facing abusive relationships. Convey strength, resilience, and hope, and gently remind them that through Platform X, help is on the way and they are not alone. The tone should be compassionate, uplifting, and encouraging, providing a sense of comfort and support. The poem should be rhyming
 """
