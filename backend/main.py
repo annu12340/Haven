@@ -13,8 +13,8 @@ from backend.utils.embedding import find_top_matches, generate_text_embedding
 from backend.utils.regex_ptr import extract_info
 from backend.utils.steganograpy import (decode_text_from_image,
                                         encode_text_in_image)
-from backend.utils.text_llm import (decompose_user_text, expand_user_text,
-                                    text_to_image)
+from backend.utils.text_llm import (create_poem, decompose_user_text,
+                                    expand_user_text, text_to_image)
 from backend.utils.twitter import send_message_to_twitter
 
 app = FastAPI()
@@ -159,23 +159,33 @@ async def decode_text(img_url: str = None, file: UploadFile = File(None)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/poem-generation")
+def create_inspiring_poems(text:str):
+    try:
+        poem = create_poem(text)
+        return poem
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 @app.post("/send-message")
 async def send_message(image_url: str, caption: str):
     send_message_to_twitter(image_url, caption)
 
 
-@app.post("/read-message")
-async def read_message():
+# @app.post("/read-message")
+# async def read_message():
 
-    response = await read_telegram_message()
+#     response = await read_telegram_message()
 
-    if response.get("ok"):
-        return {"status": "Message read successfully", "response": response}
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Failed to send message: {response.get('description')}",
-        )
+#     if response.get("ok"):
+#         return {"status": "Message read successfully", "response": response}
+#     else:
+#         raise HTTPException(
+#             status_code=400,
+#             detail=f"Failed to send message: {response.get('description')}",
+#         )
 
 
 # create a new endpoint to handle get all posts

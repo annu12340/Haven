@@ -3,7 +3,8 @@ import os
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-from backend.prompts import (USER_POST_TEXT_DECOMPOSITION_PROMPT,
+from backend.prompts import (INSPIRATION_POEM_PROMPT,
+                             USER_POST_TEXT_DECOMPOSITION_PROMPT,
                              USER_POST_TEXT_EXPANSION_PROMPT)
 
 load_dotenv()
@@ -43,5 +44,14 @@ def decompose_user_text(user_input):
     response = model.generate_content(
         f"{USER_POST_TEXT_DECOMPOSITION_PROMPT}. The data is {user_input}"
     )
+    print(response.text)
+    return response.text
+
+
+def create_poem(user_input):
+    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+    model = genai.GenerativeModel("gemini-1.5-flash-8b")
+    response = model.generate_content(f"{INSPIRATION_POEM_PROMPT}. The data is {user_input}")
     print(response.text)
     return response.text
