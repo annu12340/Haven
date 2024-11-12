@@ -52,6 +52,7 @@ def insert_data_into_db(
         "culprit": culprit,
         "relationship_to_culprit": relationship_to_culprit,
         "other_info": other_info,
+        "status": "Pending",            
     }
     culprit_embedding = generate_text_embedding(culprit)
     document["culprit_embedding"] = culprit_embedding

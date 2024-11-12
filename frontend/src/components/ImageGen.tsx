@@ -19,6 +19,8 @@ import axios from 'axios';
 import { useState } from 'react';
 import Image from 'next/image';
 import { Skeleton } from './ui/skeleton'; // Assuming Skeleton component is from your UI library
+import { SparklesIcon } from 'lucide-react';
+import Link from 'next/link';
 
 // Zod validation schema for form
 const FormSchema = z.object({
@@ -46,7 +48,13 @@ export default function ImageGen({
   const [imageOptions, setImageOptions] = useState<string[] | null>(null); // To hold the array of image URLs
   const [selectedImage, setSelectedImage] = useState<string | null>(null); // To store the selected image
   const [isLoading, setIsLoading] = useState<boolean>(false); // Loading state for images
-
+  const promptSuggestions = [
+    'Good Morning',
+    'Good Night',
+    'Sunset',
+    'Mountains',
+    'Ocean',
+  ];
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     setIsLoading(true); // Start loading state
     try {
@@ -67,6 +75,10 @@ export default function ImageGen({
     }
   };
 
+  const handleSuggestionClick = (suggestion: string) => {
+    form.setValue('imagePrompt', suggestion);
+  };
+
   const handleImageSelect = (imageUrl: string) => {
     setSelectedImage(imageUrl); // Set the selected image as final
     setResImage(imageUrl); // Update the parent component with the final image URL
@@ -76,7 +88,7 @@ export default function ImageGen({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="max-w-2xl mx-auto space-y-6 w-full"
+        className="max-w-2xl mx-auto space-y-9 w-full"
       >
         <FormField
           control={form.control}
@@ -85,8 +97,21 @@ export default function ImageGen({
             <FormItem>
               <FormLabel>Generated Text</FormLabel>
               <FormControl>
-                <Textarea {...field} />
+                <Textarea {...field} rows={8} />
               </FormControl>
+              <div className="flex items-center gap-2 font-medium text-slate-700 float-right text-sm">
+                <SparklesIcon size={18} />
+                <h1>
+                  Generated with{' '}
+                  <Link
+                    href={'https://gemini.google.com/'}
+                    target="_blank"
+                    className="underline underline-offset-2 text-blue-600"
+                  >
+                    Gemeni
+                  </Link>
+                </h1>
+              </div>
               <FormMessage />
             </FormItem>
           )}
@@ -100,10 +125,23 @@ export default function ImageGen({
               <FormLabel>Image Prompt</FormLabel>
               <FormControl>
                 <Input
+                  className=""
                   placeholder="Enter Image Prompt (e.g., Good Morning, Sunset)"
                   {...field}
                 />
               </FormControl>
+              <div className="flex gap-2 mt-2">
+                {promptSuggestions.map((suggestion, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    className="bg-slate-200 text-slate-700 text-sm px-3 py-1 rounded-xl hover:bg-slate-300 transition duration-150"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
               <FormMessage />
             </FormItem>
           )}
@@ -148,21 +186,6 @@ export default function ImageGen({
           </div>
         </div>
       ) : null}
-
-      {selectedImage && (
-        <div className="mt-6">
-          <h2 className="text-xl font-semibold">Final Selected Image</h2>
-          <div className="relative w-full h-80 overflow-hidden">
-            <Image
-              src={selectedImage}
-              alt="Selected Generated Image"
-              layout="fill"
-              objectFit="cover" // Ensure the image is properly scaled
-              className="rounded-md"
-            />
-          </div>
-        </div>
-      )}
     </Form>
   );
 }

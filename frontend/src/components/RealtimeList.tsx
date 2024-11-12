@@ -1,5 +1,4 @@
 'use client';
-
 import * as React from 'react';
 import {
   ColumnDef,
@@ -50,6 +49,7 @@ export type Post = {
   issue: string;
   other_info: string;
   city?: string;
+  status: string;
 };
 
 // Function to convert coordinates to city name
@@ -76,24 +76,6 @@ export const columns: ColumnDef<Post>[] = [
   {
     accessorKey: 'name',
     header: 'Name',
-  },
-  {
-    id: 'geobutton',
-    header: 'Geo Button',
-    cell: ({ row }) => {
-      const { location } = row.original;
-      const googleMapsUrl = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
-
-      return (
-        <Button
-          variant="outline"
-          onClick={() => window.open(googleMapsUrl, '_blank')}
-        >
-          View Map
-        </Button>
-      );
-    },
-    enableSorting: false,
   },
   {
     accessorKey: 'city',
@@ -133,10 +115,44 @@ export const columns: ColumnDef<Post>[] = [
     header: 'Issue',
   },
   {
+    accessorKey: 'status',
+    header: 'Status',
+  },
+  {
     id: 'actions',
     enableHiding: false,
-    cell: ({ row }) => {
+    cell: ({ row, table }) => {
       const post = row.original;
+
+      const handleCompleteIssue = async () => {
+        try {
+          // Update the issue status to 'Completed'
+          const updatedPost = { ...post, status: 'Completed' };
+
+          // Perform any API call here to update the status in the backend if necessary
+          const response = await fetch('/api/updatePostStatus', {
+            method: 'POST',
+            body: JSON.stringify(updatedPost),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            // Update the table data after changing the status
+            const updatedData = table
+              .getData()
+              .map((item) =>
+                item._id === post._id ? { ...item, status: 'Completed' } : item
+              );
+            table.setData(updatedData);
+          } else {
+            console.error('Error updating status');
+          }
+        } catch (error) {
+          console.error('Error completing issue:', error);
+        }
+      };
 
       return (
         <DropdownMenu>
@@ -156,6 +172,10 @@ export const columns: ColumnDef<Post>[] = [
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <Link href={`/post/${post._id}`}>View Details</Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleCompleteIssue}>
+              Complete Issue
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -285,12 +305,9 @@ export default function RealtimeList() {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                >
+                <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="text-center">
+                    <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -301,40 +318,11 @@ export default function RealtimeList() {
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
+                <TableCell colSpan={columns.length}>No results.</TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
-      </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{' '}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
-        </div>
       </div>
     </div>
   );

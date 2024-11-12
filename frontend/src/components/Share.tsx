@@ -9,9 +9,22 @@ interface ShareProps {
 }
 
 function Share({ imageURL, setShared }: ShareProps) {
-  const handleShare = async () => {
-    // Share on Telegram
-    console.log('Sharing on Telegram');
+  const handleShareTelegram = () => {
+    const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(
+      imageURL
+    )}`;
+    window.open(telegramShareUrl, '_blank');
+    // decode api
+    // decompose
+    // save
+    setShared(true);
+  };
+
+  const handleShareTwitter = () => {
+    const twitterShareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(
+      imageURL
+    )}`;
+    window.open(twitterShareUrl, '_blank');
     setShared(true);
   };
 
@@ -32,7 +45,7 @@ function Share({ imageURL, setShared }: ShareProps) {
         <Button
           variant="default"
           className="flex items-center gap-2"
-          onClick={handleShare}
+          onClick={handleShareTelegram}
         >
           <ShareIcon size={24} />
           Share on Telegram
@@ -40,6 +53,7 @@ function Share({ imageURL, setShared }: ShareProps) {
         <Button
           variant="default"
           className="flex items-center gap-2 bg-black text-white"
+          onClick={handleShareTwitter}
         >
           <ShareIcon size={24} />
           Share on Twitter

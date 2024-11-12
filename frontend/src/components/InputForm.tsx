@@ -28,9 +28,7 @@ const FormSchema = z.object({
   name: z.string().min(2, {
     message: 'Username must be at least 2 characters.',
   }),
-  phone: z.string().min(10, {
-    message: 'Phone number must be at least 10 characters.',
-  }),
+  phone: z.string().optional(),
   location: z.object({
     lat: z.number(),
     lng: z.number(),
@@ -73,8 +71,11 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
     },
   });
 
-  const [occurrenceDuration, setOccurrenceDuration] = useState(1);
-  const [frequency, setFrequency] = useState(1);
+  const [occurrenceDuration, setOccurrenceDuration] = useState(0);
+  const [frequency, setFrequency] = useState(0);
+  const [selectedContactMethods, setSelectedContactMethods] = useState<
+    string[]
+  >([]);
 
   const getUserLocation = () => {
     if (navigator.geolocation) {
@@ -124,19 +125,58 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
-          name="phone"
+          name="preferredContact"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Phone</FormLabel>
+              <FormLabel>Preferred Contact Method</FormLabel>
               <FormControl>
-                <Input placeholder="Your phone number" {...field} />
+                <div className="space-y-2">
+                  {contactMethods.map((method) => (
+                    <div key={method} className="flex items-center gap-2">
+                      <Checkbox
+                        checked={field.value.includes(
+                          method as
+                            | 'Phone'
+                            | 'Email'
+                            | 'Text message'
+                            | 'In-person'
+                        )}
+                        onCheckedChange={(checked) => {
+                          const newValue = checked
+                            ? [...field.value, method]
+                            : field.value.filter((item) => item !== method);
+                          field.onChange(newValue);
+                          setSelectedContactMethods(newValue);
+                        }}
+                      />
+                      <span>{method}</span>
+                    </div>
+                  ))}
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+
+        {selectedContactMethods.includes('Phone') && (
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone</FormLabel>
+                <FormControl>
+                  <Input placeholder="Your phone number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={form.control}
           name="location"
@@ -218,47 +258,15 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
 
         <FormField
           control={form.control}
-          name="preferredContact"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Preferred Contact Method</FormLabel>
-              <FormControl>
-                <div className="space-y-2">
-                  {contactMethods.map((method) => (
-                    <div key={method} className="flex items-center gap-2">
-                      <Checkbox
-                        checked={field.value.includes(
-                          method as
-                            | 'Phone'
-                            | 'Email'
-                            | 'Text message'
-                            | 'In-person'
-                        )}
-                        onCheckedChange={(checked) => {
-                          const newValue = checked
-                            ? [...field.value, method]
-                            : field.value.filter((item) => item !== method);
-                          field.onChange(newValue);
-                        }}
-                      />
-                      <span>{method}</span>
-                    </div>
-                  ))}
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="currentSituation"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Describe the Current Situation</FormLabel>
               <FormControl>
-                <Textarea placeholder="Describe the situation" {...field} />
+                <Textarea
+                  placeholder="Keywords describing the situation (e.g., emotional abuse, hurts child)"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -272,7 +280,10 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
             <FormItem>
               <FormLabel>Describe the Culprit</FormLabel>
               <FormControl>
-                <Textarea placeholder="Who is responsible" {...field} />
+                <Textarea
+                  placeholder="Keywords describing the culprit (e.g., dark skin, tall, blue eyes)"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
