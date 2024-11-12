@@ -14,8 +14,8 @@ function Share({ imageURL, setShared }: ShareProps) {
       imageURL
     )}`;
     window.open(telegramShareUrl, '_blank');
-    // decode api
-    // decompose
+    // decode api - img as url (main branch)
+    // decompose - generated text
     // save
     setShared(true);
   };

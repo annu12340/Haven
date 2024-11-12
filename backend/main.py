@@ -19,7 +19,22 @@ from backend.utils.text_llm import (create_poem, decompose_user_text,
                                     text_to_image)
 from backend.utils.twitter import send_message_to_twitter
 
+# Built-in libraries
+import base64
+import logging
+import io
+import json
+import os
+import sys
+
+# External dependencies
+import boto3
+import botocore
+
 app = FastAPI()
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Set up CORS middleware
 app.add_middleware(
@@ -29,6 +44,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Load environment variables
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_REGION = os.getenv("AWS_REGION")
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "shebuilds-womentechmakers")
+
+# Initialize boto3 clients
+s3_client = boto3.client(
+    "s3",
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    region_name=AWS_REGION
+)
+
+bedrock_client = boto3.client("bedrock-runtime",region_name=AWS_REGION) 
 
 
 # Utility function to convert ObjectId to string
@@ -211,3 +242,56 @@ def get_post_by_id(post_id: str):
         return JSONResponse(content=serialize_object_id(post))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving post by ID: {e}")
+
+@app.post("/generate-image")
+async def generate_image(data: dict):
+    """Generate an image based on a text prompt using Amazon Bedrock and store it in S3."""
+    try:
+        # Payload for image generation
+        prompt = data.get("prompt")
+        print("Prompt: ", prompt)       
+        body = json.dumps({
+            "taskType": "TEXT_IMAGE",
+            "textToImageParams": {"text": prompt},
+            "imageGenerationConfig": {
+                "numberOfImages": 3,
+                "quality": "standard",
+                "height": 1024,
+                "width": 1024,
+                "cfgScale": 7.5,
+                "seed": 42
+            }
+        })
+
+        # Model invocation
+        response = bedrock_client.invoke_model(
+            body=body,
+            modelId="amazon.titan-image-generator-v1",
+            accept="application/json",
+            contentType="application/json"   
+        )
+
+        response_body = json.loads(response.get("body").read())
+        images_b64 = response_body["images"]
+        image_urls = []
+        for img_b64 in images_b64:
+            image_data = base64.b64decode(img_b64)
+            image_key = f"generated-images/{ObjectId()}.png"
+            print("Image Key: ", image_key)
+            s3_client.put_object(
+                Bucket=S3_BUCKET_NAME,
+                Key=image_key,
+                Body=image_data,
+                ContentType="image/png",
+                
+            )
+
+            image_url = f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{image_key}"
+            image_urls.append(image_url)
+            print("Image URL: ", image_url)     
+
+        return {"image_urls": image_urls}
+
+    except Exception as e:
+        logger.error("Error generating image: %s", e)
+        raise HTTPException(status_code=500, detail=f"Error generating image: {e}")
