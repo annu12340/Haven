@@ -11,8 +11,8 @@ from backend.db import get_database
 from backend.schema import PostInfo
 from backend.utils.embedding import find_top_matches, generate_text_embedding
 from backend.utils.regex_ptr import extract_info
-from backend.utils.steganograpy import (decode_text_from_image,
-                                        encode_text_in_image)
+from backend.utils.steganography import (decode_text_from_image,
+                                         encode_text_in_image)
 from backend.utils.text_llm import (create_poem, decompose_user_text,
                                     expand_user_text, text_to_image)
 from backend.utils.twitter import send_message_to_twitter
@@ -29,24 +29,22 @@ app.add_middleware(
 )
 
 
-def get_db():
-    return get_database()
+# Utility function to convert ObjectId to string
+def serialize_object_id(document):
+    """Recursively convert ObjectId to string in MongoDB documents."""
+    if isinstance(document, dict):
+        for key, value in document.items():
+            if isinstance(value, ObjectId):
+                document[key] = str(value)
+            elif isinstance(value, dict):
+                document[key] = serialize_object_id(value)
+    return document
 
-
-db = get_db()
-
-# Function to convert ObjectId to string
-def serialize_post(post):
-    post["_id"] = str(post["_id"])  # Convert ObjectId to string
-    return post
-
-
-
-# Endpoint to handle POST request and expand the user input
+# Routes
 @app.post("/text-generation")
 async def get_post_and_expand_its_content(post_info: PostInfo):
+    """Expand user input text for help message generation."""
     try:
-
         concatenated_text = (
             f"Name: {post_info.name}\n"
             f"Phone: {post_info.phone}\n"
@@ -58,185 +56,110 @@ async def get_post_and_expand_its_content(post_info: PostInfo):
             f"Culprit Description: {post_info.culprit_description}\n"
             f"Custom Text: {post_info.custom_text}\n"
         )
-
         expanded_text = await expand_user_text(concatenated_text)
-
         return {"expanded_help_message": expanded_text}
-
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error processing input or calling Gemini API\n Error: {e}",
-        ) from e
+        raise HTTPException(status_code=500, detail=f"Error expanding text: {e}")
 
 @app.post("/img-generation")
 async def create_image_from_prompt(input_data: str):
+    """Generate an image based on a text prompt."""
     try:
-        prompt = input_data
-        text_to_image(prompt)
-
-        return {"received_text": prompt}
+        text_to_image(input_data)
+        return {"received_text": input_data}
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"An error occurred while processing the input\n Error:- {e}",
-        ) from e
-
+        raise HTTPException(status_code=500, detail=f"Error generating image: {e}")
 
 @app.post("/text-decomposition")
-async def get_text_and_decompse_its_content(text: str):
+async def get_text_and_decompose_its_content(text: str):
+    """Decompose and extract information from user text."""
     try:
-        decomposed_user_text = decompose_user_text(text)
-        print("decomposed_user_textdecomposed_user_textdecomposed_user_text",decomposed_user_text)
-        extracted_data=extract_info(decomposed_user_text)
+        decomposed_text = decompose_user_text(text)
+        extracted_data = extract_info(decomposed_text)
         return {"extracted_data": extracted_data}
-
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+        raise HTTPException(status_code=500, detail=f"Error decomposing text: {e}")
 
 @app.post("/encode")
 async def encode_text(text: str, img_url: str = None, file: UploadFile = File(None)):
+    """Encode text into an image."""
     try:
-        # Ensure only one image source is provided
         if bool(img_url) == bool(file):
-            raise HTTPException(
-                status_code=400,
-                detail="Please provide either an image URL or an image file, but not both.",
-            )
+            raise HTTPException(status_code=400, detail="Provide either an image URL or file, not both.")
 
-        # Load the image from URL or uploaded file
-        if img_url:
-            response = requests.get(img_url)
-            image = Image.open(BytesIO(response.content))
-        elif file:
-            image = Image.open(file.file)
-
-        # Encode the text into the image
+        image = Image.open(BytesIO(requests.get(img_url).content)) if img_url else Image.open(file.file)
         encoded_image = encode_text_in_image(image, text)
 
-        # Save the encoded image to a temporary file
         output_path = "encoded_image.png"
         encoded_image.save(output_path, format="PNG")
 
-        # Open the saved file for streaming
-        file = open(output_path, "rb")
-
-        # Stream the file as a downloadable response
-        return StreamingResponse(
-            file,
-            media_type="image/png",
-            headers={"Content-Disposition": "attachment; filename=encoded_image.png"},
-        )
-
+        return StreamingResponse(open(output_path, "rb"), media_type="image/png",
+                                 headers={"Content-Disposition": "attachment; filename=encoded_image.png"})
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+        raise HTTPException(status_code=500, detail=f"Error encoding text in image: {e}")
 
 @app.post("/decode")
 async def decode_text(img_url: str = None, file: UploadFile = File(None)):
+    """Decode text from an image."""
     try:
         if bool(img_url) == bool(file):
-            # Raise error if both or neither are provided
-            raise HTTPException(
-                status_code=400,
-                detail="Please provide either an image URL or an image file, but not both.",
-            )
+            raise HTTPException(status_code=400, detail="Provide either an image URL or file, not both.")
 
-        if img_url:
-            # Get image from URL
-            response = requests.get(img_url)
-            image = Image.open(BytesIO(response.content))
-        elif file:
-            # Get image from uploaded file
-            image = Image.open(file.file)
-
-        # Decode text from the image
+        image = Image.open(BytesIO(requests.get(img_url).content)) if img_url else Image.open(file.file)
         decoded_text = decode_text_from_image(image)
         return {"decoded_text": decoded_text}
-
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+        raise HTTPException(status_code=500, detail=f"Error decoding text from image: {e}")
 
 @app.get("/poem-generation")
-def create_inspiring_poems(text:str):
+async def create_inspiring_poems(text: str):
+    """Generate an inspirational poem based on input text."""
     try:
-        poem = create_poem(text)
-        return poem
+        return {"poem": create_poem(text)}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
+        raise HTTPException(status_code=500, detail=f"Error generating poem: {e}")
 
 @app.post("/send-message")
 async def send_message(image_url: str, caption: str):
-    send_message_to_twitter(image_url, caption)
+    """Send a message to Twitter."""
+    try:
+        send_message_to_twitter(image_url, caption)
+        return {"status": "Message sent successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error sending message to Twitter: {e}")
 
-
-# @app.post("/read-message")
-# async def read_message():
-
-#     response = await read_telegram_message()
-
-#     if response.get("ok"):
-#         return {"status": "Message read successfully", "response": response}
-#     else:
-#         raise HTTPException(
-#             status_code=400,
-#             detail=f"Failed to send message: {response.get('description')}",
-#         )
-
-
-# create a new endpoint to handle get all posts
 @app.get("/get-all-posts")
 def get_all_posts():
+    """Retrieve all posts from the database."""
     try:
-        collection = db["posts"]
-        posts = collection.find()
-        all_posts = [serialize_post(post) for post in posts]
-        return JSONResponse(content=all_posts)
+        # Database connection
+        db = get_database()
+        posts = [serialize_object_id(post) for post in db["posts"].find()]
+        return JSONResponse(content=posts)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# Function to convert ObjectId to string
-def serialize_object_id(document):
-    """Convert ObjectId to string in MongoDB document."""
-    if isinstance(document, dict):
-        for key, value in document.items():
-            if isinstance(value, ObjectId):
-                document[key] = str(value)  # Convert ObjectId to string
-            elif isinstance(value, dict):
-                document[key] = serialize_object_id(value)
-    return document
-
+        raise HTTPException(status_code=500, detail=f"Error retrieving posts: {e}")
 
 @app.get("/find-match")
-def get_top_matchs(info: str):
-    # Assuming `generate_text_embedding` returns an embedding for the given description
-    collection = db["complains2"]
-    description_vector = generate_text_embedding(info)
+def get_top_matches(info: str):
+    """Find top matches based on embedding similarity."""
+    try:
+        # Database connection
+        db = get_database()
+        description_vector = generate_text_embedding(info)
+        top_matches = find_top_matches(db["complains2"], description_vector)
+        return [serialize_object_id(match) for match in top_matches]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error finding matches: {e}")
 
-    # Get top matches from MongoDB
-    top_matches = find_top_matches(collection, description_vector)
-
-    # Serialize any ObjectId fields in the matches
-    serialized_matches = [serialize_object_id(match) for match in top_matches]
-
-    # Return the serialized results
-    return serialized_matches
-
-
-# create a new endpoint to handle get post by id
 @app.get("/get-post/{post_id}")
 def get_post_by_id(post_id: str):
+    """Retrieve a specific post by its ID."""
     try:
-        collection = db["posts"]
-        post = collection.find_one({"_id": ObjectId(post_id)})
-        if post:
-            return JSONResponse(content=serialize_post(post))
-        else:
+        # Database connection
+        db = get_database()
+        post = db["posts"].find_one({"_id": ObjectId(post_id)})
+        if not post:
             raise HTTPException(status_code=404, detail="Post not found")
+        return JSONResponse(content=serialize_object_id(post))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Error retrieving post by ID: {e}")
