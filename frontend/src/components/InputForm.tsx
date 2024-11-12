@@ -99,8 +99,12 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
       const res = await axios.post('/api/generate-text', data);
       // setResImage(res.data.url);
       // console.log('Image generated:', res.data.url);
-      console.log('Text generated:', res.data.text);
-      setText(res.data.text);
+      console.log('Text generated:', res.data.gemini);
+      if (res.data.gemini) {
+        setText(res.data.gemini);
+      } else {
+        console.log('Text setting failed');
+      }
     } catch (e) {
       console.error(e);
     }

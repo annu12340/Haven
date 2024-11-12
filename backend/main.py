@@ -47,21 +47,35 @@ def serialize_object_id(document):
 @app.post("/text-generation")
 async def get_post_and_expand_its_content(post_info: PostInfo):
     """Expand user input text for help message generation."""
+    # print("name: ", post_info.name) 
+    # print("phone: ", post_info.phone)   
+    # print("location(lat): ", post_info.location['lat'])
+    # print("location(lng): ", post_info.location['lng'])         
+    # print("duration_of_abuse: ", post_info.duration_of_abuse)
+    # print("frequency_of_incidents: ", post_info.frequency_of_incidents)         
+    # print("preferred_contact_method: ", post_info.preferred_contact_method[0]) 
+    # print("current_situation: ", post_info.current_situation)
+    # print("culprit_description: ", post_info.culprit_description)
+
     try:
         concatenated_text = (
             f"Name: {post_info.name}\n"
             f"Phone: {post_info.phone}\n"
-            f"Location: {post_info.location}\n"
+            f"Location: {post_info.location['lat']},{post_info.location['lng']}\n"
             f"Duration of Abuse: {post_info.duration_of_abuse}\n"
             f"Frequency of Incidents: {post_info.frequency_of_incidents}\n"
-            f"Preferred Contact Method: {post_info.preferred_contact_method}\n"
+            f"Preferred Contact Method: {post_info.preferred_contact_method[0]}\n"
             f"Current Situation: {post_info.current_situation}\n"
             f"Culprit Description: {post_info.culprit_description}\n"
-            f"Custom Text: {post_info.custom_text}\n"
+            #f"Custom Text: {post_info.custom_text}\n"
         )
+        print("Concatenated Text: ", concatenated_text) 
         gemini_response = await expand_user_text_using_gemini(concatenated_text)
-        gemma_response = await expand_user_text_using_gemma(concatenated_text)
-        return {"gemini_response": gemini_response, "gemma_response": gemma_response}
+        print("Gemini Response: ", gemini_response)
+        # gemma_response = await expand_user_text_using_gemma(concatenated_text)
+        # print("Gemma Response: ", gemma_response)
+        # return {"gemini_response": gemini_response, "gemma_response": gemma_response}
+        return {"gemini_response": gemini_response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error expanding text: {e}")
 

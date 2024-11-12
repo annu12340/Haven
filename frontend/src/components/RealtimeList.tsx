@@ -139,15 +139,13 @@ export const columns: ColumnDef<Post>[] = [
           });
 
           if (response.ok) {
-            // Update the table data after changing the status
-            const updatedData = table
-              .getData()
-              .map((item) =>
-                item._id === post._id ? { ...item, status: 'Completed' } : item
-              );
-            table.setData(updatedData);
+            // Update the status in the UI
+            //
           } else {
-            console.error('Error updating status');
+            console.error(
+              'Failed to update issue status:',
+              response.statusText
+            );
           }
         } catch (error) {
           console.error('Error completing issue:', error);
