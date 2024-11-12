@@ -58,20 +58,13 @@ export default function ImageGen({
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     setIsLoading(true); // Start loading state
     try {
-      // Simulate a small delay before images are fetched
-      setTimeout(async () => {
-        try {
-          const res = await axios.post('/api/generate-image', data);
-          console.log('Image options generated:', res.data.images); // Assuming API returns images array
-          setImageOptions(res.data.images); // Set multiple image options
-        } catch (error) {
-          console.error('Error generating images:', error);
-        } finally {
-          setIsLoading(false); // End loading state
-        }
-      }, 2000); // Add a 1-second delay for the loading skeleton to show
+      const res = await axios.post('/api/generate-image', data);
+      console.log('Image options generated:', res.data.images); // Assuming API returns images array
+      setImageOptions(res.data.images); // Set multiple image options
     } catch (error) {
       console.error('Error generating images:', error);
+    } finally {
+      setIsLoading(false); // End loading state
     }
   };
 
@@ -155,7 +148,7 @@ export default function ImageGen({
       {isLoading ? (
         // Skeleton loader shown while the images are being generated
         <div className="mt-6 space-y-4">
-          <h2 className="text-xl font-semibold">Loading...</h2>
+          <h2 className="text-xl font-semibold">Generating Images...</h2>
           <div className="grid grid-cols-3 gap-4">
             {[...Array(3)].map((_, index) => (
               <Skeleton key={index} className="h-[192px] w-full bg-gray-300" />
@@ -163,7 +156,7 @@ export default function ImageGen({
           </div>
         </div>
       ) : imageOptions && imageOptions.length > 0 ? (
-        <div className="mt-6 space-y-4">
+        <div className="mt-6 space-y-4 mb-6">
           <h2 className="text-xl font-semibold">Select an Image</h2>
           <div className="grid grid-cols-3 gap-4">
             {imageOptions.map((imageUrl, index) => (

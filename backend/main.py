@@ -122,14 +122,27 @@ async def create_image_from_prompt(input_data: str):
 
 
 @app.post("/text-decomposition")
-async def get_text_and_decompose_its_content(text: str):
+async def get_text_and_decompose_its_content(data: dict):
     """Decompose and extract information from user text."""
     try:
+        text = data.get("text")
+        print("Text: ", text)
         decomposed_text = decompose_user_text(text)
         extracted_data = extract_info(decomposed_text)
         return {"extracted_data": extracted_data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error decomposing text: {e}")
+    
+# save extracted data to database
+@app.post("/save-extracted-data")   
+async def save_extracted_data(data: dict):
+    try:
+        # Database connection
+        db = get_database()
+        db["admin"].insert_one(data)
+        return {"status": "Data saved successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error saving data: {e}")
 
 
 @app.post("/encode")

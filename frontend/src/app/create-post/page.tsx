@@ -36,7 +36,12 @@ function Page() {
   const stepContent = [
     <InputForm key="step1" setText={setText} />, // Step 1
     <ImageGen key="step2" text={resText || ''} setResImage={setResImage} />, // Step 2
-    <Share key="step3" imageURL={resImage || ''} setShared={setShared} />, // Step 2
+    <Share
+      key="step3"
+      imageURL={resImage || ''}
+      setShared={setShared}
+      resText={resText || ''}
+    />, // Step 2
   ];
 
   if (!user) {

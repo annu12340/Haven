@@ -33,8 +33,12 @@ export async function POST(req: Request) {
       updatedData
     );
     console.log('Text next api:', res.data.gemini_response);
-    // const res =
-    //   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi. Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat. Duis semper. Duis arcu massa, scelerisque vitae, consequat in, pretium a, enim. Pellentesque congue. Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim. Pellentesque sed ';
+    // const res = {
+    //   data: {
+    //     gemini_response:
+    //       "This is an urgent plea for help. My name is Kavikumar M and I need immediate assistance. I am located at 13.0646016, 80.2062336. I am reporting a child abuse situation and I am afraid for the child's safety. This has been happening for 10 years, and it happens on average 7 times a week. I need to speak to someone right now.  The abuser is a person with dark skin. The child is currently being hurt and needs your immediate help. Please call me at 9025313327. I need you to come as soon as possible. The situation is incredibly serious and I fear for the child's well-being. ",
+    //   },
+    // };
     return NextResponse.json(
       { gemini: res.data.gemini_response },
       { status: 200 }

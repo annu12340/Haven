@@ -2,21 +2,36 @@ import React from 'react';
 import { Button } from './ui/button';
 import { ShareIcon } from 'lucide-react';
 import Image from 'next/image';
+import axios from 'axios';
 
 interface ShareProps {
   imageURL: string;
+  resText: string;
   setShared: (shared: boolean) => void;
 }
 
-function Share({ imageURL, setShared }: ShareProps) {
+function Share({ imageURL, resText, setShared }: ShareProps) {
+  const handleCommonFunction = async () => {
+    // decode api - img as url (main branch)
+    // decompose - generated text
+    // save to db
+    console.log('resText: ', resText);
+    const decomposeReq = await axios.post('/api/decompose', {
+      resText: resText,
+    });
+    const saveReq = await axios.post('/api/save', decomposeReq.data.decomposed);
+    if (saveReq.status !== 200) {
+      console.log('Failed to save to DB');
+    }
+  };
+
   const handleShareTelegram = () => {
     const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(
       imageURL
     )}`;
     window.open(telegramShareUrl, '_blank');
-    // decode api - img as url (main branch)
-    // decompose - generated text
-    // save
+
+    handleCommonFunction();
     setShared(true);
   };
 
@@ -25,6 +40,7 @@ function Share({ imageURL, setShared }: ShareProps) {
       imageURL
     )}`;
     window.open(twitterShareUrl, '_blank');
+    handleCommonFunction();
     setShared(true);
   };
 
