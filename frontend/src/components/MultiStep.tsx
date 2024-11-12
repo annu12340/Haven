@@ -24,9 +24,7 @@ export default function HorizontalLinearStepper({
   activeStep,
   stepContent,
 }: HorizontalLinearStepperProps) {
-  const [poem, setPoem] = React.useState(
-    "Let wings unfurl, break chains of old, For women's worth, a story untold. In every field, their voices rise, With equal rights, they reach for the skies. No glass ceilings, no limits to their dreams, Equality's light, a radiant beam. From boardroom to home, they strive as one, For justice and peace, the battle's begun. Together we rise, with hearts aflame, In unity's embrace, we claim our name."
-  );
+  const [poem, setPoem] = React.useState(null as string | null);
 
   React.useEffect(() => {
     if (activeStep === 4 && !poem) {

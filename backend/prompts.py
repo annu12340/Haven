@@ -1,5 +1,5 @@
 USER_POST_TEXT_EXPANSION_PROMPT = """
-Generate a clear, urgent, and structured report based on the following details to help authorities understand the victim's situation and take prompt action. The report should be in the first person, highlighting the severity of the situation, the frequency of the abuse, and the danger posed by the perpetrator. The narrative should be concise and emphasize the need for immediate intervention. The report should also include the preferred method of contact to ensure a fast response.
+Generate a clear, urgent, and structured report based on the following details to help authorities understand the victim's situation and take prompt action. The report should be in the first person, highlighting the severity of the situation, the frequency of the abuse, and the danger posed by the perpetrator. The narrative should be concise and emphasize the need for immediate intervention. The report should also include the preferred method of contact to ensure a fast response. Report shouldn't be in markdown format.
 
 Here are the inputs:
 
