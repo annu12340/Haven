@@ -1,9 +1,15 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 
 class PostInfo(BaseModel):
+    name: str
+    phone: str
     location: str
-    culprit_info: str
+    duration_of_abuse: str
+    frequency_of_incidents: str
+    preferred_contact_method: str
     current_situation: str
-    custom_text: str
-    number: str
+    culprit_description: str
+    custom_text: Optional[str] = None

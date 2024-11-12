@@ -2,23 +2,27 @@ from io import BytesIO
 
 import requests
 from bson import ObjectId
-from db import get_database
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from PIL import Image
-from schema import PostInfo
-from utils.embedding import find_top_matches, generate_text_embedding
-from utils.steganograpy import decode_text_from_image, encode_text_in_image
-from utils.text_llm import decompose_user_text, expand_user_text, text_to_image
-from utils.twitter import send_message_to_twitter
+
+from backend.db import get_database
+from backend.schema import PostInfo
+from backend.utils.embedding import find_top_matches, generate_text_embedding
+from backend.utils.regex_ptr import extract_info
+from backend.utils.steganograpy import (decode_text_from_image,
+                                        encode_text_in_image)
+from backend.utils.text_llm import (decompose_user_text, expand_user_text,
+                                    text_to_image)
+from backend.utils.twitter import send_message_to_twitter
 
 app = FastAPI()
 
 # Set up CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Replace with your frontend URL
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,27 +41,33 @@ def serialize_post(post):
     return post
 
 
+
+# Endpoint to handle POST request and expand the user input
 @app.post("/text-generation")
 async def get_post_and_expand_its_content(post_info: PostInfo):
     try:
+
         concatenated_text = (
+            f"Name: {post_info.name}\n"
+            f"Phone: {post_info.phone}\n"
             f"Location: {post_info.location}\n"
-            f"Culprit Info: {post_info.culprit_info}\n"
+            f"Duration of Abuse: {post_info.duration_of_abuse}\n"
+            f"Frequency of Incidents: {post_info.frequency_of_incidents}\n"
+            f"Preferred Contact Method: {post_info.preferred_contact_method}\n"
             f"Current Situation: {post_info.current_situation}\n"
+            f"Culprit Description: {post_info.culprit_description}\n"
             f"Custom Text: {post_info.custom_text}\n"
-            f"Number: {post_info.number}"
         )
 
         expanded_text = await expand_user_text(concatenated_text)
 
-        # Return the expanded text as the help message
         return {"expanded_help_message": expanded_text}
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail="Error processing input or calling Gemini API\n Error:-  {e}",
+            detail=f"Error processing input or calling Gemini API\n Error: {e}",
         ) from e
-
 
 @app.post("/img-generation")
 async def create_image_from_prompt(input_data: str):
@@ -76,11 +86,10 @@ async def create_image_from_prompt(input_data: str):
 @app.post("/text-decomposition")
 async def get_text_and_decompse_its_content(text: str):
     try:
-        print("post_infopost_info", text)
-        decomposed_user_text = text
         decomposed_user_text = decompose_user_text(text)
-
-        return {"decomposed_user_text": decomposed_user_text}
+        print("decomposed_user_textdecomposed_user_textdecomposed_user_text",decomposed_user_text)
+        extracted_data=extract_info(decomposed_user_text)
+        return {"extracted_data": extracted_data}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -168,6 +177,7 @@ async def read_message():
             detail=f"Failed to send message: {response.get('description')}",
         )
 
+
 # create a new endpoint to handle get all posts
 @app.get("/get-all-posts")
 def get_all_posts():
@@ -180,7 +190,6 @@ def get_all_posts():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
 # Function to convert ObjectId to string
 def serialize_object_id(document):
     """Convert ObjectId to string in MongoDB document."""
@@ -191,6 +200,7 @@ def serialize_object_id(document):
             elif isinstance(value, dict):
                 document[key] = serialize_object_id(value)
     return document
+
 
 @app.get("/find-match")
 def get_top_matchs(info: str):
@@ -206,6 +216,7 @@ def get_top_matchs(info: str):
 
     # Return the serialized results
     return serialized_matches
+
 
 # create a new endpoint to handle get post by id
 @app.get("/get-post/{post_id}")

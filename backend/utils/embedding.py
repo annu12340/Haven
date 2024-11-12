@@ -61,5 +61,4 @@ def find_top_matches(
     # Convert the cursor to a list to access the results
     results = list(results_cursor)
 
-
     return results
