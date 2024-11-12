@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useClerk } from '@clerk/nextjs';
-import { LocateIcon } from 'lucide-react';
+import { Loader2, LocateIcon } from 'lucide-react';
 import axios from 'axios';
 import { Slider } from './ui/slider';
 import { Textarea } from './ui/textarea';
@@ -73,6 +73,7 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
 
   const [occurrenceDuration, setOccurrenceDuration] = useState(0);
   const [frequency, setFrequency] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [selectedContactMethods, setSelectedContactMethods] = useState<
     string[]
   >([]);
@@ -96,17 +97,21 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     try {
+      setLoading(true);
       const res = await axios.post('/api/generate-text', data);
       // setResImage(res.data.url);
       // console.log('Image generated:', res.data.url);
       console.log('Text generated:', res.data.gemini);
       if (res.data.gemini) {
         setText(res.data.gemini);
+        setLoading(false);
       } else {
         console.log('Text setting failed');
+        setLoading(false);
       }
     } catch (e) {
       console.error(e);
+      setLoading(false);
     }
   }
 
@@ -294,7 +299,15 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
           )}
         />
 
-        <Button type="submit">Generate Text</Button>
+        <Button
+          type="submit"
+          className="flex items-center gap-2 duration-200 ease-in-out"
+        >
+          Generate Text
+          <Loader2
+            className={`h-5 w-5 ${loading ? 'animate-spin' : 'hidden'}`}
+          />
+        </Button>
       </form>
     </Form>
   );
