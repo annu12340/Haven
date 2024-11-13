@@ -183,13 +183,16 @@ export default function RealtimeList() {
 
         const enrichedData = await Promise.all(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          result.map(async (post: any) => ({
-            ...post,
-            city: await fetchCityName(
-              Number(post.Location.split(',')[0]),
-              Number(post.Location.split(',')[1])
-            ),
-          }))
+          result.map(async (post: any) => {
+            const [latitude, longitude] = post.Location.split(',').map(Number);
+            console.log(latitude, longitude);
+            const city = await fetchCityName(latitude, longitude);
+
+            return {
+              ...post,
+              city: city || 'Unknown Location', // Fallback if no city is found
+            };
+          })
         );
 
         setData(enrichedData);

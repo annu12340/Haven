@@ -69,7 +69,7 @@ function PostDetail({ id }: { id: string }) {
   }
 
   const [lat, lng] = post.Location.split(',').map(Number);
-  const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyA3WfS4xHpoAkcSm2pCGTpd_tfd0xdqmuE&q=${lat},${lng}`;
+  const mapUrl = `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_MAP_KEY}&q=${lat},${lng}`;
 
   return (
     <div className="h-full p-8 bg-gray-50">
