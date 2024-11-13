@@ -85,7 +85,7 @@ export const columns: ColumnDef<any>[] = [
 
       return (
         <div
-          className={`priority-badge ${severityClass} text-center text-[12px] px-1 py-1 rounded-full`}
+          className={`priority-badge ${severityClass} mx-auto text-center max-w-[80px] text-[10px] border px-1 py-1 rounded-full`}
         >
           {severity}
         </div>

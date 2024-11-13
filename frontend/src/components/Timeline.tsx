@@ -32,10 +32,16 @@ export default function CustomTimeline() {
           <TimelineConnector />
         </TimelineSeparator>
         <TimelineContent sx={{ py: '12px', px: 2 }}>
-          <Typography variant="h6" component="span">
+          <Typography
+            variant="body1"
+            component="span"
+            sx={{
+              fontWeight: 'bold',
+            }}
+          >
             Issue Created
           </Typography>
-          <Typography>
+          <Typography variant="body2">
             User created the issue and provided the details.
           </Typography>
         </TimelineContent>
@@ -58,10 +64,16 @@ export default function CustomTimeline() {
           <TimelineConnector />
         </TimelineSeparator>
         <TimelineContent sx={{ py: '12px', px: 2 }}>
-          <Typography variant="h6" component="span">
+          <Typography
+            variant="body1"
+            component="span"
+            sx={{
+              fontWeight: 'bold',
+            }}
+          >
             Location Visited
           </Typography>
-          <Typography>
+          <Typography variant="body2">
             The location was visited and inspected for further action.
           </Typography>
         </TimelineContent>
@@ -77,10 +89,18 @@ export default function CustomTimeline() {
           <TimelineConnector />
         </TimelineSeparator>
         <TimelineContent sx={{ py: '12px', px: 2 }}>
-          <Typography variant="h6" component="span">
+          <Typography
+            variant="body1"
+            component="span"
+            sx={{
+              fontWeight: 'bold',
+            }}
+          >
             Issue Completed
           </Typography>
-          <Typography>The issue was resolved and closed.</Typography>
+          <Typography variant="body2">
+            The issue was resolved and closed.
+          </Typography>
         </TimelineContent>
       </TimelineItem>
     </Timeline>

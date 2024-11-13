@@ -205,6 +205,9 @@ function PostDetail({ id }: { id: string }) {
           ></iframe>
         </div>
         <div className="rounded-md h-[370px] w-full p-4 border border-gray-400">
+          <h1 className="text-center text-lg font-semibold mb-4">
+            Recent Activities
+          </h1>
           <CustomTimeline />
         </div>
       </div>
