@@ -40,7 +40,10 @@ export async function POST(req: Request) {
     //   },
     // };
     return NextResponse.json(
-      { gemini: res.data.gemini_response },
+      {
+        gemini_response: res.data.gemini_response,
+        gemma_response: res.data.gemma_response,
+      },
       { status: 200 }
     );
   } catch (error) {

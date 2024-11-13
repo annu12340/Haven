@@ -9,16 +9,17 @@ import ImageGen from '@/components/ImageGen';
 function Page() {
   const [resImage, setResImage] = useState<string | null>(null);
   const [resText, setText] = useState<string | null>(null);
+  const [resTextGemma, setTextGemma] = useState<string | null>(null);
   const { user } = useClerk();
   const [activeStep, setActiveStep] = useState(0);
   const [shared, setShared] = useState(false);
 
   useEffect(() => {
     // Move to the next step when resImage is set
-    if (resText) {
+    if (resText && resTextGemma) {
       setActiveStep(1);
     }
-  }, [resText]);
+  }, [resText, resTextGemma]);
 
   useEffect(() => {
     // Move to the next step when resImage is set
@@ -34,8 +35,13 @@ function Page() {
   }, [shared]);
 
   const stepContent = [
-    <InputForm key="step1" setText={setText} />, // Step 1
-    <ImageGen key="step2" text={resText || ''} setResImage={setResImage} />, // Step 2
+    <InputForm key="step1" setText={setText} setTextGemma={setTextGemma} />, // Step 1
+    <ImageGen
+      key="step2"
+      text={resText || ''}
+      setResImage={setResImage}
+      textGemma={resTextGemma || ''}
+    />, // Step 2
     <Share
       key="step3"
       imageURL={resImage || ''}

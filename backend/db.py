@@ -1,6 +1,6 @@
 import os
 import pickle
-
+import logging  
 from bson import Binary
 from dotenv import load_dotenv
 from pymongo import MongoClient
@@ -8,6 +8,7 @@ from pymongo import MongoClient
 from pymongo.operations import SearchIndexModel
 
 from backend.utils.embedding import generate_text_embedding
+from backend.logger import CustomFormatter
 
 load_dotenv()
 print("MONGO_ENDPOINT:", os.getenv("MONGO_ENDPOINT"))
@@ -15,6 +16,11 @@ print("MONGO_ENDPOINT:", os.getenv("MONGO_ENDPOINT"))
 # Initialize db_client as None globally to cache the connection
 db_client = None
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setFormatter(CustomFormatter())
+logger.addHandler(handler)
 
 def get_database():
     """
@@ -26,7 +32,7 @@ def get_database():
         try:
             # Create a single MongoClient instance
             db_client = MongoClient(os.getenv("MONGO_ENDPOINT"))
-            print("Database connection established.")
+            logger.info("Connected to the database")    
         except Exception as e:
             print("Error connecting to the database:", e)
             return None

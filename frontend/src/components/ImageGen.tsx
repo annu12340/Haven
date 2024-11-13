@@ -32,9 +32,11 @@ const FormSchema = z.object({
 
 export default function ImageGen({
   text,
+  textGemma,
   setResImage,
 }: {
   text: string;
+  textGemma: string;
   setResImage: (resImage: string) => void;
 }) {
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -48,6 +50,9 @@ export default function ImageGen({
   const [imageOptions, setImageOptions] = useState<string[] | null>(null); // To hold the array of image URLs
   const [selectedImage, setSelectedImage] = useState<string | null>(null); // To store the selected image
   const [isLoading, setIsLoading] = useState<boolean>(false); // Loading state for images
+  const [selectedText, setSelectedText] = useState<string>('');
+  const [selectedModel, setSelectedModel] = useState<string>(''); // Default model
+
   const promptSuggestions = [
     'Good Morning',
     'Good Night',
@@ -77,11 +82,21 @@ export default function ImageGen({
     setResImage(imageUrl); // Update the parent component with the final image URL
   };
 
+  const handleTextOptionClick = (text: string) => {
+    setSelectedText(text); // Set the selected text
+    if (text === textGemma) {
+      setSelectedModel('gemma'); // Set the model to Gemma
+    } else {
+      setSelectedModel('gemini'); // Set the model to Gemini
+    }
+    form.setValue('generatedText', text); // Update the form field with the selected text
+  };
+
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="max-w-2xl mx-auto space-y-9 w-full"
+        className="max-w-4xl mx-auto space-y-9 w-full"
       >
         <FormField
           control={form.control}
@@ -90,21 +105,48 @@ export default function ImageGen({
             <FormItem>
               <FormLabel>Generated Text</FormLabel>
               <FormControl>
-                <Textarea {...field} rows={8} />
+                {!selectedText ? (
+                  <div className="space-x-2 flex items-center w-full ">
+                    {[text, textGemma].map((textOption, index) => (
+                      <div
+                        key={index}
+                        onClick={() => handleTextOptionClick(textOption)}
+                        className="cursor-pointer w-full bg-slate-200 p-2 rounded-md hover:bg-slate-300"
+                      >
+                        <div className="flex flex-col items-center pt-4 justify-between h-[330px]">
+                          <span>{textOption}</span>
+                          <span
+                            className={`${
+                              textOption === textGemma
+                                ? 'bg-gradient-to-tr from-orange-500 to-orange-300 text-white'
+                                : 'bg-gradient-to-tr from-blue-500 to-blue-400 text-white'
+                            } text-xs rounded-full py-1 px-2 max-w-[60px] mt-3`}
+                          >
+                            {textOption === textGemma ? 'Gemma' : 'Gemini'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <Textarea {...field} value={selectedText} rows={8} />
+                )}
               </FormControl>
-              <div className="flex items-center gap-2 font-medium text-slate-700 float-right text-sm">
-                <SparklesIcon size={18} />
-                <h1>
-                  Generated with{' '}
-                  <Link
-                    href={'https://gemini.google.com/'}
-                    target="_blank"
-                    className="underline underline-offset-2 text-blue-600"
-                  >
-                    Gemeni
-                  </Link>
-                </h1>
-              </div>
+              {selectedText && (
+                <div className="flex items-center gap-2 font-medium text-slate-700 float-right text-sm">
+                  <SparklesIcon size={18} />
+                  <h1>
+                    Generated with{' '}
+                    <Link
+                      href={'https://gemini.google.com/'}
+                      target="_blank"
+                      className="underline underline-offset-2 text-blue-600"
+                    >
+                      {selectedModel === 'gemma' ? 'Gemma' : 'Gemini'}
+                    </Link>
+                  </h1>
+                </div>
+              )}
               <FormMessage />
             </FormItem>
           )}

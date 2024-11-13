@@ -1,5 +1,6 @@
 # Built-in libraries
 import base64
+import json
 import logging
 import os
 
@@ -21,7 +22,8 @@ from backend.utils.regex_ptr import extract_info
 from backend.utils.steganography import (decode_text_from_image,
                                          encode_text_in_image)
 from backend.utils.text_llm import (create_poem, decompose_user_text,
-                                    expand_user_text_using_bedrock,
+                                    expand_user_text_using_gemini,
+                                    expand_user_text_using_gemma,
                                     text_to_image)
 from backend.utils.twitter import send_message_to_twitter
 
@@ -30,6 +32,9 @@ logger.setLevel(logging.INFO)
 handler = logging.StreamHandler()
 handler.setFormatter(CustomFormatter())
 logger.addHandler(handler)
+
+# Cached database connection
+db = None
 
 # Initialize FastAPI and CORS middleware
 app = FastAPI()
@@ -40,6 +45,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def initialize_database():
+    global db
+    if db is None:
+        db = get_database()  # Establish the connection once at load time
+
+# Call the initialize function at startup
+@app.on_event("startup")
+async def startup_event():
+    initialize_database()
 
 # Environment and AWS setup
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
@@ -57,26 +72,30 @@ bedrock_client = boto3.client("bedrock-runtime", region_name=AWS_REGION)
 
 # API Endpoints
 @app.post("/text-generation")
-async def get_post_and_expand_content(post_info: PostInfo):
+async def get_post_and_expand_its_content(post_info: PostInfo):
     """Expand user input text for help message generation."""
     try:
-        concatenated_text = "\n".join(
-            [
-                f"Name: {post_info.name}",
-                f"Phone: {post_info.phone}",
-                f"Location: {post_info.location['lat']},{post_info.location['lng']}",
-                f"Duration of Abuse: {post_info.duration_of_abuse}",
-                f"Frequency of Incidents: {post_info.frequency_of_incidents}",
-                f"Preferred Contact Method: {post_info.preferred_contact_method[0]}",
-                f"Current Situation: {post_info.current_situation}",
-                f"Culprit Description: {post_info.culprit_description}",
-            ]
+        concatenated_text = (
+            f"Name: {post_info.name}\n"
+            f"Phone: {post_info.phone}\n"
+            f"Location: {post_info.location}\n"
+            f"Duration of Abuse: {post_info.duration_of_abuse}\n"
+            f"Frequency of Incidents: {post_info.frequency_of_incidents}\n"
+            f"Preferred Contact Method: {post_info.preferred_contact_method}\n"
+            f"Current Situation: {post_info.current_situation}\n"
+            f"Culprit Description: {post_info.culprit_description}\n"
+            f"Custom Text: {post_info.custom_text}\n"
         )
+<<<<<<< HEAD
         bedrock_response = await expand_user_text_using_bedrock(bedrock_client, concatenated_text)
         return {"response": bedrock_response}
+=======
+        gemini_response = await expand_user_text_using_gemini(concatenated_text)
+        gemma_response = await expand_user_text_using_gemma(concatenated_text)
+        return {"gemini_response": gemini_response, "gemma_response": gemma_response}
+>>>>>>> main
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error expanding text: {e}")
-
 
 @app.post("/img-generation")
 async def create_image_from_prompt(input_data: str):
@@ -102,7 +121,6 @@ async def decompose_text_content(data: dict):
 @app.post("/save-extracted-data")
 async def save_extracted_data(data: dict):
     try:
-        db = get_database()
         db["admin"].insert_one(data)
         return {"status": "Data saved successfully"}
     except Exception as e:
@@ -169,7 +187,6 @@ async def send_message_to_twitter_endpoint(image_url: str, caption: str):
 def get_all_posts():
     """Retrieve all posts from the database."""
     try:
-        db = get_database()
         posts = [serialize_object_id(post) for post in db["admin"].find()]
         return JSONResponse(content=posts)
     except Exception as e:
@@ -180,8 +197,12 @@ def get_all_posts():
 def find_top_matching_posts(info: str, collection: str):
     """Find top matches based on embedding similarity."""
     try:
+<<<<<<< HEAD
         db = get_database()
         description_vector = generate_text_embedding(bedrock_client, info)
+=======
+        description_vector = generate_text_embedding(info)
+>>>>>>> main
         top_matches = find_top_matches(db[collection], description_vector)
         return [serialize_object_id(match) for match in top_matches]
     except Exception as e:
@@ -192,7 +213,6 @@ def find_top_matching_posts(info: str, collection: str):
 def get_post_by_id(post_id: str):
     """Retrieve a specific post by its ID."""
     try:
-        db = get_database()
         post = db["admin"].find_one({"_id": ObjectId(post_id)})
         if not post:
             raise HTTPException(status_code=404, detail="Post not found")
@@ -200,6 +220,19 @@ def get_post_by_id(post_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving post by ID: {e}")
 
+@app.post("/close-issue/{issue_id}")
+async def close_issue(issue_id: str):
+    """Mark an issue as closed by updating its status."""
+    try:
+        result = db["admin"].update_one(
+            {"_id": ObjectId(issue_id)},
+            {"$set": {"status": "closed"}}
+        )
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Issue not found or already closed")
+        return {"status": "Issue marked as closed"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error closing issue: {e}")
 
 @app.post("/upload_embeddings/")
 async def upload_embeddings():
@@ -210,3 +243,52 @@ async def upload_embeddings():
         return {"message": "Embeddings uploaded successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error uploading embeddings: {e}")
+
+
+@app.post("/generate-image")
+async def generate_image(data: dict):
+    """Generate an image based on a text prompt using Amazon Bedrock and store it in S3."""
+    try:
+        # Payload for image generation
+        prompt = data.get("prompt")
+        print("Prompt: ", prompt)
+        body = json.dumps({
+            "taskType": "TEXT_IMAGE",
+            "textToImageParams": {"text": prompt},
+            "imageGenerationConfig": {
+                "numberOfImages": 3,
+                "quality": "standard",
+                "height": 1024,
+                "width": 1024,
+                "cfgScale": 7.5,
+                "seed": 42
+            }
+        })
+        # Model invocation
+        response = bedrock_client.invoke_model(
+            body=body,
+            modelId="amazon.titan-image-generator-v1",
+            accept="application/json",
+            contentType="application/json"
+        )
+        response_body = json.loads(response.get("body").read())
+        images_b64 = response_body["images"]
+        image_urls = []
+        for img_b64 in images_b64:
+            image_data = base64.b64decode(img_b64)
+            image_key = f"generated-images/{ObjectId()}.png"
+            print("Image Key: ", image_key)
+            s3_client.put_object(
+                Bucket=S3_BUCKET_NAME,
+                Key=image_key,
+                Body=image_data,
+                ContentType="image/png",
+
+            )
+            image_url = f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{image_key}"
+            image_urls.append(image_url)
+            print("Image URL: ", image_url)
+        return {"image_urls": image_urls}
+    except Exception as e:
+        logger.error("Error generating image: %s", e)
+        raise HTTPException(status_code=500, detail=f"Error generating image: {e}")
