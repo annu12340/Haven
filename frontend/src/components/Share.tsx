@@ -19,7 +19,12 @@ function Share({ imageURL, resText, setShared }: ShareProps) {
     const decomposeReq = await axios.post('/api/decompose', {
       resText: resText,
     });
-    const saveReq = await axios.post('/api/save', decomposeReq.data.decomposed);
+    // add status(pending) to decomposeReq.data.decomposed
+    const data = {
+      ...decomposeReq.data.decomposed,
+      status: 'pending',
+    };
+    const saveReq = await axios.post('/api/save', data);
     if (saveReq.status !== 200) {
       console.log('Failed to save to DB');
     }

@@ -1,5 +1,6 @@
 'use client';
 import * as React from 'react';
+
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -40,37 +41,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import Link from 'next/link';
+import { fetchCityName } from '@/lib/utils';
 
-export type DomesticViolenceReport = {
-  _id: string; // Unique identifier for the report
-  name: string; // Name of the person
-  location: string; // Location as a comma-separated string (e.g., "13.0646016, 80.2062336")
-  preferredWayOfContact: string; // Preferred way of contact (e.g., "Phone")
-  contactInfo: string; // Contact information (e.g., phone number)
-  frequencyOfDomesticViolence: string; // Frequency of domestic violence (e.g., "7 times a week")
-  relationshipWithPerpetrator: string; // Relationship with the perpetrator (e.g., "Not specified")
-  severityOfDomesticViolence: string; // Severity level (e.g., "Sev3 (Frequent physical abuse or threats)")
-  natureOfDomesticViolence: string; // Nature of domestic violence (e.g., "Physical")
-  impactOnChildren: string; // Impact on children (e.g., "The child is currently being hurt and needs immediate help.")
-  culpritDetails: string; // Details of the culprit (e.g., "A person with dark skin")
-  otherInfo: string; // Other additional information (e.g., "The situation has been happening for 10 years and is incredibly serious.")
-};
-
-// Function to convert coordinates to city name
-const fetchCityName = async (lat: number, lng: number) => {
-  try {
-    const response = await fetch(
-      `https://api.opencagedata.com/geocode/v1/json?key=${process.env.NEXT_PUBLIC_OPENCAGE_API_KEY}&q=${lat}%2C${lng}`
-    );
-    const data = await response.json();
-    return data.results[0]?.components?.city || 'Unknown location';
-  } catch (error) {
-    console.error('Error fetching city name:', error);
-    return 'Unknown location';
-  }
-};
-
-export const columns: ColumnDef<DomesticViolenceReport>[] = [
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const columns: ColumnDef<any>[] = [
   {
     id: 'sno',
     header: 'S.No',
@@ -115,7 +89,7 @@ export const columns: ColumnDef<DomesticViolenceReport>[] = [
     },
   },
   {
-    accessorKey: 'issue',
+    accessorKey: 'Nature of domestic violence',
     header: 'Issue',
   },
   {
@@ -187,7 +161,8 @@ export const columns: ColumnDef<DomesticViolenceReport>[] = [
 ];
 
 export default function RealtimeList() {
-  const [data, setData] = React.useState<DomesticViolenceReport[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [data, setData] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -203,15 +178,22 @@ export default function RealtimeList() {
         const response = await fetch('/api/getPosts');
         const result = await response.json();
         console.log(result);
-        // const enrichedData = await Promise.all(
-        //   result.map(async (post: DomesticViolenceReport) => ({
-        //     ...post,
-        //     city: await fetchCityName(post.location.lat, post.location.lng),
-        //   }))
-        // );
+        // location is string in the format "lat,lng"
+        // so we need to split it and convert it to number
 
-        // setData(enrichedData);
-        setData(result);
+        const enrichedData = await Promise.all(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          result.map(async (post: any) => ({
+            ...post,
+            city: await fetchCityName(
+              Number(post.Location.split(',')[0]),
+              Number(post.Location.split(',')[1])
+            ),
+          }))
+        );
+
+        setData(enrichedData);
+        // setData(result);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -254,9 +236,9 @@ export default function RealtimeList() {
       <div className="flex items-center py-4">
         <Input
           placeholder="Filter by name..."
-          value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
+          value={(table.getColumn('Name')?.getFilterValue() as string) ?? ''}
           onChange={(event) =>
-            table.getColumn('name')?.setFilterValue(event.target.value)
+            table.getColumn('Name')?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />
@@ -310,7 +292,7 @@ export default function RealtimeList() {
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="text-center">
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()

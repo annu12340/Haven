@@ -22,19 +22,47 @@ from backend.utils.twitter import send_message_to_twitter
 # Built-in libraries
 import base64
 import logging
-import io
 import json
 import os
-import sys
 
 # External dependencies
 import boto3
-import botocore
+
+# Customize logging format and add colors
+class CustomFormatter(logging.Formatter):
+    """Custom formatter with colors for different log levels."""
+
+    # Define log colors
+    gray = "\x1b[38;20m"
+    yellow = "\x1b[33;20m"
+    red = "\x1b[31;20m"
+    bold_red = "\x1b[31;1m"
+    reset = "\x1b[0m"
+
+    # Define formats for different log levels
+    FORMATS = {
+        logging.DEBUG: gray + "[%(asctime)s] %(levelname)s: %(message)s" + reset,
+        logging.INFO: gray + "[%(asctime)s] %(levelname)s: %(message)s" + reset,
+        logging.WARNING: yellow + "[%(asctime)s] %(levelname)s: %(message)s" + reset,
+        logging.ERROR: red + "[%(asctime)s] %(levelname)s: %(message)s" + reset,
+        logging.CRITICAL: bold_red + "[%(asctime)s] %(levelname)s: %(message)s" + reset,
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno, self.gray)
+        formatter = logging.Formatter(log_fmt, datefmt="%Y-%m-%d %H:%M:%S")
+        return formatter.format(record)
+
+
+# Setup custom logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setFormatter(CustomFormatter())
+logger.addHandler(handler)
+
 
 app = FastAPI()
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # Set up CORS middleware
 app.add_middleware(
