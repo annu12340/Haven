@@ -1,5 +1,6 @@
 # Built-in libraries
 import base64
+import json
 import logging
 import os
 
@@ -25,8 +26,6 @@ from backend.utils.text_llm import (create_poem, decompose_user_text,
                                     expand_user_text_using_gemma,
                                     text_to_image)
 from backend.utils.twitter import send_message_to_twitter
-import json
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -242,7 +241,7 @@ async def generate_image(data: dict):
     try:
         # Payload for image generation
         prompt = data.get("prompt")
-        print("Prompt: ", prompt)       
+        print("Prompt: ", prompt)
         body = json.dumps({
             "taskType": "TEXT_IMAGE",
             "textToImageParams": {"text": prompt},
@@ -260,7 +259,7 @@ async def generate_image(data: dict):
             body=body,
             modelId="amazon.titan-image-generator-v1",
             accept="application/json",
-            contentType="application/json"   
+            contentType="application/json"
         )
         response_body = json.loads(response.get("body").read())
         images_b64 = response_body["images"]
@@ -274,11 +273,11 @@ async def generate_image(data: dict):
                 Key=image_key,
                 Body=image_data,
                 ContentType="image/png",
-                
+
             )
             image_url = f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{image_key}"
             image_urls.append(image_url)
-            print("Image URL: ", image_url)     
+            print("Image URL: ", image_url)
         return {"image_urls": image_urls}
     except Exception as e:
         logger.error("Error generating image: %s", e)
