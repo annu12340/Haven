@@ -1,6 +1,18 @@
 'use client';
 import { cleanText, fetchCityName } from '@/lib/utils';
 import React, { useEffect, useState } from 'react';
+import { Button } from './ui/button';
+import {
+  CircleX,
+  Nfc,
+  CalendarDays,
+  FileUser,
+  PersonStanding,
+  MapPin,
+  TrendingUp,
+  Loader2,
+} from 'lucide-react';
+import CustomTimeline from './Timeline';
 
 interface Post {
   Name: string;
@@ -66,60 +78,91 @@ function PostDetail({ id }: { id: string }) {
   }
 
   if (!post) {
-    return <div>Loading...</div>;
+    return (
+      <div className="h-full flex items-center justify-center">
+        <Loader2 size={24} className="animate-spin" />
+      </div>
+    );
   }
   const cleanLoc = cleanText(post.Location);
   const [lat, lng] = cleanLoc.split(',').map(Number);
   const mapUrl = `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_MAP_KEY}&q=${lat},${lng}`;
 
   return (
-    <div className="h-full p-8 bg-gray-50">
-      <div className="max-w-2xl mx-auto bg-white shadow-md rounded-lg p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">{post.Name}</h1>
-        <div className="space-y-2">
-          <p className="text-sm text-gray-600">
-            <span className="font-semibold">Status:</span> {post.status}
-          </p>
-          <p className="text-sm text-gray-600">
-            <span className="font-semibold">Preferred way of contact:</span>{' '}
-            {post['Preferred way of contact']}
-          </p>
-          <p className="text-sm text-gray-600">
-            <span className="font-semibold">
-              Relationship with perpetrator:
-            </span>{' '}
-            {post['Relationship with perpetrator']}
-          </p>
-          <p className="text-sm text-gray-600">
-            <span className="font-semibold">Contact:</span>{' '}
-            {post['Contact info']}
-          </p>
-          <p className="text-sm text-gray-600">
-            <span className="font-semibold">Frequency:</span>{' '}
-            {post['Frequency of domestic violence']}
-          </p>
-          <p className="text-sm text-gray-600">
-            <span className="font-semibold">Nature of domestic violence:</span>{' '}
-            {post['Nature of domestic violence']}
-          </p>
-          <p className="text-sm text-gray-600">
-            <span className="font-semibold">Severity:</span>{' '}
-            {post['Severity of domestic violence']}
-          </p>
-          <p className="text-sm text-gray-600">
-            <span className="font-semibold">Location:</span>{' '}
-            {city ? `${city} (${post.Location})` : `Loading city...`}
-          </p>
-          <p className="text-sm text-gray-600">
-            <span className="font-semibold">Other info:</span>{' '}
-            {post['Other info']}
+    <div className="flex flex-col h-full max-w-6xl w-full mx-auto p-5">
+      <div className="flex items-center justify-between w-full">
+        <h1 className="text-3xl font-bold">{post.Name}</h1>
+        <Button
+          onClick={() => {
+            console.log('Close Issue');
+          }}
+          className="flex items-center space-x-2"
+        >
+          <CircleX />
+          Close Issue
+        </Button>
+      </div>
+      <div className="grid grid-cols-3 gap-3 mt-5">
+        <div className="max-w-sm w-full rounded-md border flex flex-col gap-3 border-gray-400 p-3">
+          <div className="flex items-center justify-between w-full gap-5">
+            <h2 className="text-lg font-semibold">Preferred way of contact</h2>
+            <Nfc className="text-gray-700" />
+          </div>
+          <p>{post['Preferred way of contact']}</p>
+          <p>{post['Contact info']}</p>
+        </div>
+        <div className="max-w-sm w-full rounded-md border flex flex-col gap-3 border-gray-400 p-3">
+          <div className="flex items-center justify-between w-full gap-5">
+            <h2 className="text-lg font-semibold">
+              Frequency of domestic violence
+            </h2>
+            <CalendarDays className="text-gray-700" />
+          </div>
+          <p>{post['Frequency of domestic violence']}</p>
+          <p>{post['Relationship with perpetrator']}</p>
+        </div>
+        <div className="max-w-sm w-full rounded-md border flex flex-col gap-3 border-gray-400 p-3">
+          <div className="flex items-center justify-between w-full gap-5">
+            <h2 className="text-lg font-semibold">
+              Nature of domestic violence
+            </h2>
+            <PersonStanding className="text-gray-700" />
+          </div>
+          <p>{post['Impact on children']}</p>
+          <p>{post['Severity of domestic violence']}</p>
+        </div>
+        <div className="max-w-sm w-full rounded-md border flex flex-col gap-3 border-gray-400 p-3">
+          <div className="flex items-center justify-between w-full gap-5">
+            <h2 className="text-lg font-semibold">Culprit details</h2>
+            <FileUser className="text-gray-700" />
+          </div>
+          <p>{post['Culprit details']}</p>
+          <p>{post['Other info']}</p>
+        </div>
+        <div className="max-w-sm w-full rounded-md border flex flex-col gap-3 border-gray-400 p-3">
+          <div className="flex items-center justify-between w-full gap-5">
+            <h2 className="text-lg font-semibold">Location</h2>
+            <MapPin className="text-gray-700" />
+          </div>
+          <p>{post['Location']}</p>
+          <p>{city}</p>
+        </div>
+        <div className="max-w-sm w-full rounded-md border flex flex-col gap-3 border-gray-400 p-3">
+          <div className="flex items-center justify-between w-full gap-5">
+            <h2 className="text-lg font-semibold">Current Status</h2>
+            <TrendingUp className="text-gray-700" />
+          </div>
+          <p>{post.status}</p>
+          <p>
+            Resolve this issue by contacting the person and providing necessary
           </p>
         </div>
-
-        <div className="map-container mt-6">
+      </div>
+      <div className="flex items-center w-full mt-5 gap-3">
+        <div className="rounded-md w-full p-1 border border-gray-400">
           <iframe
             width="100%"
-            height="350"
+            height="360"
             className="rounded-md border border-gray-300"
             style={{ border: 0 }}
             loading="lazy"
@@ -127,6 +170,9 @@ function PostDetail({ id }: { id: string }) {
             referrerPolicy="no-referrer-when-downgrade"
             src={mapUrl}
           ></iframe>
+        </div>
+        <div className="rounded-md h-[370px] w-full p-4 border border-gray-400">
+          <CustomTimeline />
         </div>
       </div>
     </div>
