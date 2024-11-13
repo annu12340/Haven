@@ -89,7 +89,6 @@ s3_client = boto3.client(
 
 bedrock_client = boto3.client("bedrock-runtime",region_name=AWS_REGION) 
 
-
 # Utility function to convert ObjectId to string
 def serialize_object_id(document):
     """Recursively convert ObjectId to string in MongoDB documents."""

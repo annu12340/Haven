@@ -232,7 +232,7 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
                       field.onChange(value[0]);
                     }}
                   />
-                  <span>{occurrenceDuration}</span>
+                  <span>{occurrenceDuration} months</span>
                 </div>
               </FormControl>
               <FormMessage />
@@ -258,7 +258,7 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
                       field.onChange(value[0]);
                     }}
                   />
-                  <span>{frequency}</span>
+                  <span>{frequency} times</span>
                 </div>
               </FormControl>
               <FormMessage />

@@ -6,7 +6,6 @@ import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
 import Typography from '@mui/material/Typography';
 import { CheckCircleIcon } from 'lucide-react';
-import Link from 'next/link';
 
 const steps = [
   'Fill out the form',
@@ -73,9 +72,6 @@ export default function HorizontalLinearStepper({
             <Typography sx={{ ml: 2 }} variant="h5">
               Post successfully submitted!
             </Typography>
-            <Link href="/" className="ml-4 text-blue-500 underline">
-              Go back to home
-            </Link>
           </div>
           {poem && (
             <Box
