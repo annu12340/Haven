@@ -53,7 +53,13 @@ const FormSchema = z.object({
 //   setResImage: (resImage: string) => void;
 // }
 // { setResImage }: InputFormProps
-export function InputForm({ setText }: { setText: (resText: string) => void }) {
+export function InputForm({
+  setText,
+  setTextGemma,
+}: {
+  setText: (resText: string) => void;
+  setTextGemma: (resText: string) => void;
+}) {
   const { user } = useClerk();
 
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -102,9 +108,12 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
       const res = await axios.post('/api/generate-text', data);
       // setResImage(res.data.url);
       // console.log('Image generated:', res.data.url);
-      console.log('Text generated:', res.data.gemini);
-      if (res.data.gemini) {
-        setText(res.data.gemini);
+      console.log('res:', res.data);
+      console.log('Text generated with gemini:', res.data.gemini_response);
+      console.log('Text generated with gemma:', res.data.gemma_response);
+      if (res.data.gemini_response && res.data.gemma_response) {
+        setText(res.data.gemini_response);
+        setTextGemma(res.data.gemma_response);
         setLoading(false);
       } else {
         console.log('Text setting failed');
