@@ -22,8 +22,7 @@ from backend.utils.regex_ptr import extract_info
 from backend.utils.steganography import (decode_text_from_image,
                                          encode_text_in_image)
 from backend.utils.text_llm import (create_poem, decompose_user_text,
-                                    expand_user_text_using_gemini,
-                                    expand_user_text_using_gemma,
+                                    expand_user_text_using_bedrock,
                                     text_to_image)
 from backend.utils.twitter import send_message_to_twitter
 
@@ -86,14 +85,8 @@ async def get_post_and_expand_its_content(post_info: PostInfo):
             f"Culprit Description: {post_info.culprit_description}\n"
             f"Custom Text: {post_info.custom_text}\n"
         )
-<<<<<<< HEAD
         bedrock_response = await expand_user_text_using_bedrock(bedrock_client, concatenated_text)
         return {"response": bedrock_response}
-=======
-        gemini_response = await expand_user_text_using_gemini(concatenated_text)
-        gemma_response = await expand_user_text_using_gemma(concatenated_text)
-        return {"gemini_response": gemini_response, "gemma_response": gemma_response}
->>>>>>> main
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error expanding text: {e}")
 
@@ -116,7 +109,6 @@ async def decompose_text_content(data: dict):
         return {"extracted_data": extract_info(bedrock_client, decomposed_text)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error decomposing text: {e}")
-
 
 @app.post("/save-extracted-data")
 async def save_extracted_data(data: dict):
@@ -197,12 +189,8 @@ def get_all_posts():
 def find_top_matching_posts(info: str, collection: str):
     """Find top matches based on embedding similarity."""
     try:
-<<<<<<< HEAD
         db = get_database()
         description_vector = generate_text_embedding(bedrock_client, info)
-=======
-        description_vector = generate_text_embedding(info)
->>>>>>> main
         top_matches = find_top_matches(db[collection], description_vector)
         return [serialize_object_id(match) for match in top_matches]
     except Exception as e:
