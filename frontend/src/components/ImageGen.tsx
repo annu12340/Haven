@@ -113,7 +113,7 @@ export default function ImageGen({
                         onClick={() => handleTextOptionClick(textOption)}
                         className="cursor-pointer w-full bg-slate-200 p-2 rounded-md hover:bg-slate-300"
                       >
-                        <div className="flex flex-col items-center pt-4 justify-between h-[330px]">
+                        <div className="flex flex-col items-center pt-4 justify-between h-[360px]">
                           <span>{textOption}</span>
                           <span
                             className={`${

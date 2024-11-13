@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import CustomTimeline from './Timeline';
 import toast from 'react-hot-toast';
+import { DialogDemo } from './Dialong';
 
 interface Post {
   _id: string;
@@ -120,13 +121,16 @@ function PostDetail({ id }: { id: string }) {
       <div className="flex items-center justify-between w-full">
         <h1 className="text-3xl font-bold">{post.Name}</h1>
         {post.status === 'pending' && (
-          <Button
-            onClick={() => handleCloseIssue(post._id)}
-            className="flex items-center space-x-2"
-          >
-            <CircleX />
-            Close Issue
-          </Button>
+          <div className="flex items-center gap-3">
+            <DialogDemo />
+            <Button
+              onClick={() => handleCloseIssue(post._id)}
+              className="flex items-center space-x-2"
+            >
+              <CircleX />
+              Close Issue
+            </Button>
+          </div>
         )}
         {post.status === 'closed' && (
           <Button className="flex items-center space-x-2 bg-green-500 text-white hover:bg-green-600">

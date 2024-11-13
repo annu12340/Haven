@@ -68,7 +68,7 @@ function Navbar() {
           Law Bot
         </Link>
         <Link
-          href="/therapybot"
+          href="http://localhost:5173"
           className={`${
             isActive('/therapybot')
               ? 'text-blue-700 font-semibold'
