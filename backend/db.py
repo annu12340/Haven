@@ -34,7 +34,7 @@ def get_database():
 
 
 def insert_data_into_db(
-    name, location, contact_info, severity, culprit, relationship_to_culprit, other_info
+   bedrock_client, name, location, contact_info, severity, culprit, relationship_to_culprit, other_info
 ):
     """
     Inserts a document into the 'posts' collection of the MongoDB database.
@@ -56,7 +56,7 @@ def insert_data_into_db(
         "other_info": other_info,
         "status": "Pending",
     }
-    culprit_embedding = generate_text_embedding(culprit)
+    culprit_embedding = generate_text_embedding(bedrock_client, culprit)
     document["culprit_embedding"] = culprit_embedding
     try:
         # Insert the document into the collection
@@ -77,12 +77,12 @@ def insert_data_into_db(
 
 
 # Function to upload embeddings to MongoDB
-def upload_embeddings_to_mongo(file_contents):
+def upload_embeddings_to_mongo(bedrock_client, file_contents):
     db = get_database()
     collection = db["doc_embedding"]
     for filename, content in file_contents:
         # Generate embeddings for the document content
-        embedding = generate_text_embedding(content)
+        embedding = generate_text_embedding(bedrock_client, content)
 
         # Prepare the document to insert into MongoDB
         doc = {

@@ -93,7 +93,7 @@ async def decompose_text_content(data: dict):
     """Decompose and extract information from user text."""
     try:
         text = data.get("text")
-        decomposed_text = decompose_user_text(text)
+        decomposed_text = decompose_user_text(bedrock_client, text)
         return {"extracted_data": extract_info(bedrock_client, decomposed_text)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error decomposing text: {e}")
@@ -148,7 +148,7 @@ async def decode_text_from_image_endpoint(
 async def create_poem_endpoint(text: str):
     """Generate an inspirational poem based on input text."""
     try:
-        return {"poem": create_poem(bedrock_runtime, text)}
+        return {"poem": create_poem(bedrock_client, text)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating poem: {e}")
 
@@ -181,7 +181,7 @@ def find_top_matching_posts(info: str, collection: str):
     """Find top matches based on embedding similarity."""
     try:
         db = get_database()
-        description_vector = generate_text_embedding(info)
+        description_vector = generate_text_embedding(bedrock_client, info)
         top_matches = find_top_matches(db[collection], description_vector)
         return [serialize_object_id(match) for match in top_matches]
     except Exception as e:
@@ -206,7 +206,7 @@ async def upload_embeddings():
     """Upload embeddings to MongoDB."""
     try:
         file_contents = read_files_from_directory("backend/docs")
-        upload_embeddings_to_mongo(file_contents)
+        upload_embeddings_to_mongo(bedrock_client, file_contents)
         return {"message": "Embeddings uploaded successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error uploading embeddings: {e}")

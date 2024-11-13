@@ -1,3 +1,4 @@
+import json
 import os
 
 import google.generativeai as genai
@@ -6,15 +7,23 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def generate_text_embedding(text):
-    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    response = genai.embed_content(
-        model="models/text-embedding-004",
-        content=text,
-        task_type="retrieval_document",
-        title="Embedding of culprit info",
-    )
-    return response["embedding"]
+def generate_text_embedding(bedrock_client, text):
+    model_id = "amazon.titan-embed-text-v2:0"
+
+    native_request = {"inputText": text}
+
+    # Convert the native request to JSON.
+    request = json.dumps(native_request)
+
+    # Invoke the model with the request.
+    response = bedrock_client.invoke_model(modelId=model_id, body=request)
+
+    # Decode the model's native response body.
+    model_response = json.loads(response["body"].read())
+
+    # Extract and print the generated embedding and the input text token count.
+    embedding = model_response["embedding"]
+    return embedding
 
 
 def calculate_similarity_percentage(query_vector, result_vector):
