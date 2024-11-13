@@ -78,8 +78,9 @@ def insert_data_into_db(
 
 # Function to encode text into embeddings
 def encode_text(text: str):
-    model = SentenceTransformer('all-MiniLM-L6-v2')
+    model = SentenceTransformer("all-MiniLM-L6-v2")
     return model.encode(text).tolist()  # Convert numpy array to list
+
 
 # Function to upload embeddings to MongoDB
 def upload_embeddings_to_mongo(file_contents):
@@ -93,7 +94,9 @@ def upload_embeddings_to_mongo(file_contents):
         doc = {
             "filename": filename,
             "embedding": Binary(pickle.dumps(embedding)),  # Store as a binary object
-            "content": content[:500]  # Store the first 500 characters of the content for preview
+            "content": content[
+                :500
+            ],  # Store the first 500 characters of the content for preview
         }
 
         # Insert the document into the MongoDB collection

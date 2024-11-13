@@ -14,6 +14,7 @@ class PostInfo(BaseModel):
     culprit_description: str
     custom_text: Optional[str] = None
 
+
 # Pydantic model to validate input
 class FileContent(BaseModel):
     filename: str
