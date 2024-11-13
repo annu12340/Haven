@@ -1,11 +1,11 @@
 USER_POST_TEXT_EXPANSION_PROMPT = """
-Generate a clear, urgent, and structured report based on the following details to help authorities understand the victim's situation and take prompt action. The report should be in the first person, highlighting the severity of the situation, the frequency of the abuse, and the danger posed by the perpetrator. The narrative should be concise and emphasize the need for immediate intervention. The report should also include the preferred method of contact to ensure a fast response.
+Generate a clear, urgent, and structured report based on the following details to help authorities understand the victim's situation and take prompt action. The report should be in the first person, highlighting the severity of the situation, the frequency of the abuse, and the danger posed by the perpetrator. The narrative should be concise and emphasize the need for immediate intervention. The report should also include the preferred method of contact to ensure a fast response. Report shouldn't be in markdown format.
 
 Here are the inputs:
 
 Name: [User's Name]
 Phone: [User's Phone Number]
-Location: [User's Location (City, State)]
+Location: [User's Location lat,lng]
 How long has it been occurring?: [Duration of Abuse]
 Frequency of Incidents: [How often the incidents occur]
 Preferred Contact Method: [Phone, Email, Text message, In-person]
@@ -39,7 +39,7 @@ Output Format: It must be a key value pair separated by :
 
 6. Relationship with perpetrator: [e.g., Spouse, Partner, Family Member, or "Not specified"]
 
-7. Severity of domestic violence: [Choose one: Sev1 (Verbal/Emotional only), Sev2 (Occasional minor physical or intimidation), Sev3 (Frequent physical abuse or threats), Sev4 (Life-threatening or severe ongoing abuse) or "Not specified"]
+7. Severity of domestic violence: [Choose one: Low (Verbal/Emotional only), Medium (Occasional minor physical or intimidation), High (Frequent physical abuse or threats), Very High (Life-threatening or severe ongoing abuse) or "Not specified"]
 
 8. Nature of domestic violence: [Physical, Emotional, Financial, Psychological, or Combination if applicable; otherwise "Not specified"]
 

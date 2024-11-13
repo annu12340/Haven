@@ -1,6 +1,12 @@
+# Built-in libraries
+import base64
+import json
+import logging
 import os
 from io import BytesIO
 
+# External dependencies
+import boto3
 import requests
 from bson import Binary, ObjectId
 from fastapi import FastAPI, File, HTTPException, UploadFile
@@ -20,6 +26,41 @@ from backend.utils.text_llm import (create_poem, decompose_user_text,
                                     text_to_image)
 from backend.utils.twitter import send_message_to_twitter
 
+
+# Customize logging format and add colors
+class CustomFormatter(logging.Formatter):
+    """Custom formatter with colors for different log levels."""
+
+    # Define log colors
+    gray = "\x1b[38;20m"
+    yellow = "\x1b[33;20m"
+    red = "\x1b[31;20m"
+    bold_red = "\x1b[31;1m"
+    reset = "\x1b[0m"
+
+    # Define formats for different log levels
+    FORMATS = {
+        logging.DEBUG: gray + "[%(asctime)s] %(levelname)s: %(message)s" + reset,
+        logging.INFO: gray + "[%(asctime)s] %(levelname)s: %(message)s" + reset,
+        logging.WARNING: yellow + "[%(asctime)s] %(levelname)s: %(message)s" + reset,
+        logging.ERROR: red + "[%(asctime)s] %(levelname)s: %(message)s" + reset,
+        logging.CRITICAL: bold_red + "[%(asctime)s] %(levelname)s: %(message)s" + reset,
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno, self.gray)
+        formatter = logging.Formatter(log_fmt, datefmt="%Y-%m-%d %H:%M:%S")
+        return formatter.format(record)
+
+
+# Setup custom logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setFormatter(CustomFormatter())
+logger.addHandler(handler)
+
+
 app = FastAPI()
 
 # Set up CORS middleware
@@ -30,6 +71,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Load environment variables
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_REGION = os.getenv("AWS_REGION")
+S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "shebuilds-womentechmakers")
+
+# Initialize boto3 clients
+s3_client = boto3.client(
+    "s3",
+    aws_access_key_id=AWS_ACCESS_KEY_ID,
+    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    region_name=AWS_REGION
+)
+
+bedrock_client = boto3.client("bedrock-runtime",region_name=AWS_REGION)
 
 
 # Utility function to convert ObjectId to string
@@ -48,21 +105,35 @@ def serialize_object_id(document):
 @app.post("/text-generation")
 async def get_post_and_expand_its_content(post_info: PostInfo):
     """Expand user input text for help message generation."""
+    # print("name: ", post_info.name)
+    # print("phone: ", post_info.phone)
+    # print("location(lat): ", post_info.location['lat'])
+    # print("location(lng): ", post_info.location['lng'])
+    # print("duration_of_abuse: ", post_info.duration_of_abuse)
+    # print("frequency_of_incidents: ", post_info.frequency_of_incidents)
+    # print("preferred_contact_method: ", post_info.preferred_contact_method[0])
+    # print("current_situation: ", post_info.current_situation)
+    # print("culprit_description: ", post_info.culprit_description)
+
     try:
         concatenated_text = (
             f"Name: {post_info.name}\n"
             f"Phone: {post_info.phone}\n"
-            f"Location: {post_info.location}\n"
+            f"Location: {post_info.location['lat']},{post_info.location['lng']}\n"
             f"Duration of Abuse: {post_info.duration_of_abuse}\n"
             f"Frequency of Incidents: {post_info.frequency_of_incidents}\n"
-            f"Preferred Contact Method: {post_info.preferred_contact_method}\n"
+            f"Preferred Contact Method: {post_info.preferred_contact_method[0]}\n"
             f"Current Situation: {post_info.current_situation}\n"
             f"Culprit Description: {post_info.culprit_description}\n"
-            f"Custom Text: {post_info.custom_text}\n"
+            #f"Custom Text: {post_info.custom_text}\n"
         )
+        print("Concatenated Text: ", concatenated_text)
         gemini_response = await expand_user_text_using_gemini(concatenated_text)
-        gemma_response = await expand_user_text_using_gemma(concatenated_text)
-        return {"gemini_response": gemini_response, "gemma_response": gemma_response}
+        print("Gemini Response: ", gemini_response)
+        # gemma_response = await expand_user_text_using_gemma(concatenated_text)
+        # print("Gemma Response: ", gemma_response)
+        # return {"gemini_response": gemini_response, "gemma_response": gemma_response}
+        return {"gemini_response": gemini_response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error expanding text: {e}")
 
@@ -78,14 +149,27 @@ async def create_image_from_prompt(input_data: str):
 
 
 @app.post("/text-decomposition")
-async def get_text_and_decompose_its_content(text: str):
+async def get_text_and_decompose_its_content(data: dict):
     """Decompose and extract information from user text."""
     try:
+        text = data.get("text")
+        print("Text: ", text)
         decomposed_text = decompose_user_text(text)
         extracted_data = extract_info(decomposed_text)
         return {"extracted_data": extracted_data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error decomposing text: {e}")
+
+# save extracted data to database
+@app.post("/save-extracted-data")
+async def save_extracted_data(data: dict):
+    try:
+        # Database connection
+        db = get_database()
+        db["admin"].insert_one(data)
+        return {"status": "Data saved successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error saving data: {e}")
 
 
 @app.post("/encode")
@@ -161,13 +245,13 @@ async def send_message(image_url: str, caption: str):
         )
 
 
-@app.get("/get-all-posts")
+@app.get("/get-admin-posts")
 def get_all_posts():
     """Retrieve all posts from the database."""
     try:
         # Database connection
         db = get_database()
-        posts = [serialize_object_id(post) for post in db["posts"].find()]
+        posts = [serialize_object_id(post) for post in db["admin"].find()]
         return JSONResponse(content=posts)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving posts: {e}")
@@ -192,13 +276,12 @@ def get_post_by_id(post_id: str):
     try:
         # Database connection
         db = get_database()
-        post = db["posts"].find_one({"_id": ObjectId(post_id)})
+        post = db["admin"].find_one({"_id": ObjectId(post_id)})
         if not post:
             raise HTTPException(status_code=404, detail="Post not found")
         return JSONResponse(content=serialize_object_id(post))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving post by ID: {e}")
-
 
 
 # Directory containing docs
@@ -264,3 +347,56 @@ async def upload_single_document(file_content: FileContent):
         return {"message": f"Uploaded {file_content.filename} to MongoDB successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/generate-image")
+async def generate_image(data: dict):
+    """Generate an image based on a text prompt using Amazon Bedrock and store it in S3."""
+    try:
+        # Payload for image generation
+        prompt = data.get("prompt")
+        print("Prompt: ", prompt)
+        body = json.dumps({
+            "taskType": "TEXT_IMAGE",
+            "textToImageParams": {"text": prompt},
+            "imageGenerationConfig": {
+                "numberOfImages": 3,
+                "quality": "standard",
+                "height": 1024,
+                "width": 1024,
+                "cfgScale": 7.5,
+                "seed": 42
+            }
+        })
+
+        # Model invocation
+        response = bedrock_client.invoke_model(
+            body=body,
+            modelId="amazon.titan-image-generator-v1",
+            accept="application/json",
+            contentType="application/json"
+        )
+
+        response_body = json.loads(response.get("body").read())
+        images_b64 = response_body["images"]
+        image_urls = []
+        for img_b64 in images_b64:
+            image_data = base64.b64decode(img_b64)
+            image_key = f"generated-images/{ObjectId()}.png"
+            print("Image Key: ", image_key)
+            s3_client.put_object(
+                Bucket=S3_BUCKET_NAME,
+                Key=image_key,
+                Body=image_data,
+                ContentType="image/png",
+
+            )
+
+            image_url = f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{image_key}"
+            image_urls.append(image_url)
+            print("Image URL: ", image_url)
+
+        return {"image_urls": image_urls}
+
+    except Exception as e:
+        logger.error("Error generating image: %s", e)
+        raise HTTPException(status_code=500, detail=f"Error generating image: {e}")

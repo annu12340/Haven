@@ -9,21 +9,40 @@ interface GenerateTextRequestData {
   frequency: number;
   visibleInjuries: 'Yes' | 'No';
   preferredContact: string[];
-  culpritInfo: string;
+  culprit: string;
   currentSituation: string;
 }
 
 export async function POST(req: Request) {
   try {
     const data: GenerateTextRequestData = await req.json();
-    console.log('received data:', data);
-    // const res = await axios.post(
-    //   `${process.env.NEXT_PUBLIC_BACKEND_URL}/text-generation`,
-    //   data
-    // );
-    const res =
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor. Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi. Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat. Duis semper. Duis arcu massa, scelerisque vitae, consequat in, pretium a, enim. Pellentesque congue. Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue. Praesent egestas leo in pede. Praesent blandit odio eu enim. Pellentesque sed ';
-    return NextResponse.json({ text: res }, { status: 200 });
+    const updatedData = {
+      name: data.name,
+      phone: data.phone,
+      location: data.location,
+      duration_of_abuse: data.occurrenceDuration,
+      frequency_of_incidents: data.frequency,
+      preferred_contact_method: data.preferredContact,
+      culprit_description: data.culprit,
+      current_situation: data.currentSituation,
+    };
+
+    console.log('received data:', updatedData);
+    const res = await axios.post(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/text-generation`,
+      updatedData
+    );
+    console.log('Text next api:', res.data.gemini_response);
+    // const res = {
+    //   data: {
+    //     gemini_response:
+    //       "This is an urgent plea for help. My name is Kavikumar M and I need immediate assistance. I am located at 13.0646016, 80.2062336. I am reporting a child abuse situation and I am afraid for the child's safety. This has been happening for 10 years, and it happens on average 7 times a week. I need to speak to someone right now.  The abuser is a person with dark skin. The child is currently being hurt and needs your immediate help. Please call me at 9025313327. I need you to come as soon as possible. The situation is incredibly serious and I fear for the child's well-being. ",
+    //   },
+    // };
+    return NextResponse.json(
+      { gemini: res.data.gemini_response },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Image generation failed:', error);
     return NextResponse.json(

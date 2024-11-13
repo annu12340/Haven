@@ -1,6 +1,6 @@
 'use client';
-
 import * as React from 'react';
+
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -41,32 +41,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import Link from 'next/link';
+import { cleanText, fetchCityName } from '@/lib/utils';
 
-export type Post = {
-  _id: string;
-  name: string;
-  location: { lat: number; lng: number };
-  severity: string;
-  issue: string;
-  other_info: string;
-  city?: string;
-};
-
-// Function to convert coordinates to city name
-const fetchCityName = async (lat: number, lng: number) => {
-  try {
-    const response = await fetch(
-      `https://api.opencagedata.com/geocode/v1/json?key=${process.env.NEXT_PUBLIC_OPENCAGE_API_KEY}&q=${lat}%2C${lng}`
-    );
-    const data = await response.json();
-    return data.results[0]?.components?.city || 'Unknown location';
-  } catch (error) {
-    console.error('Error fetching city name:', error);
-    return 'Unknown location';
-  }
-};
-
-export const columns: ColumnDef<Post>[] = [
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const columns: ColumnDef<any>[] = [
   {
     id: 'sno',
     header: 'S.No',
@@ -74,34 +52,16 @@ export const columns: ColumnDef<Post>[] = [
     enableSorting: false,
   },
   {
-    accessorKey: 'name',
+    accessorKey: 'Name',
     header: 'Name',
   },
   {
-    id: 'geobutton',
-    header: 'Geo Button',
-    cell: ({ row }) => {
-      const { location } = row.original;
-      const googleMapsUrl = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
-
-      return (
-        <Button
-          variant="outline"
-          onClick={() => window.open(googleMapsUrl, '_blank')}
-        >
-          View Map
-        </Button>
-      );
-    },
-    enableSorting: false,
-  },
-  {
-    accessorKey: 'city',
+    accessorKey: 'state',
     header: 'Location',
-    cell: ({ row }) => <div>{row.getValue('city') || 'Loading...'}</div>,
+    cell: ({ row }) => <div>{row.getValue('state') || 'Loading...'}</div>,
   },
   {
-    accessorKey: 'severity',
+    accessorKey: 'Severity of domestic violence',
     header: ({ column }) => (
       <Button
         variant="ghost"
@@ -113,15 +73,19 @@ export const columns: ColumnDef<Post>[] = [
     ),
     cell: ({ row }) => (
       <div
-        className={`priority-badge priority-${row.original.severity.toLowerCase()}`}
+        className={`priority-badge text-center priority-${row.original.severityOfDomesticViolence}`}
       >
-        {row.getValue('severity')}
+        {cleanText(row.getValue('Severity of domestic violence'))}
       </div>
     ),
     sortingFn: (rowA, rowB) => {
-      const priorityOrder = { High: 1, Medium: 2, Low: 3 };
-      const severityA = rowA.getValue('severity');
-      const severityB = rowB.getValue('severity');
+      const priorityOrder = { 'Very High': 0, High: 1, Medium: 2, Low: 3 };
+      const severityA = cleanText(
+        rowA.getValue('Severity of domestic violence')
+      );
+      const severityB = cleanText(
+        rowB.getValue('Severity of domestic violence')
+      );
       return (
         priorityOrder[severityA as keyof typeof priorityOrder] -
         priorityOrder[severityB as keyof typeof priorityOrder]
@@ -129,14 +93,47 @@ export const columns: ColumnDef<Post>[] = [
     },
   },
   {
-    accessorKey: 'issue',
+    accessorKey: 'Nature of domestic violence',
     header: 'Issue',
+    cell: ({ row }) => cleanText(row.getValue('Nature of domestic violence')),
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
   },
   {
     id: 'actions',
     enableHiding: false,
     cell: ({ row }) => {
       const post = row.original;
+
+      const handleCompleteIssue = async () => {
+        try {
+          // Update the issue status to 'Completed'
+          const updatedPost = { ...post, status: 'Completed' };
+
+          // Perform any API call here to update the status in the backend if necessary
+          const response = await fetch('/api/updatePostStatus', {
+            method: 'POST',
+            body: JSON.stringify(updatedPost),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            // Update the status in the UI
+            //
+          } else {
+            console.error(
+              'Failed to update issue status:',
+              response.statusText
+            );
+          }
+        } catch (error) {
+          console.error('Error completing issue:', error);
+        }
+      };
 
       return (
         <DropdownMenu>
@@ -157,6 +154,10 @@ export const columns: ColumnDef<Post>[] = [
             <DropdownMenuItem>
               <Link href={`/post/${post._id}`}>View Details</Link>
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleCompleteIssue}>
+              Complete Issue
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );
@@ -165,7 +166,8 @@ export const columns: ColumnDef<Post>[] = [
 ];
 
 export default function RealtimeList() {
-  const [data, setData] = React.useState<Post[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [data, setData] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -181,14 +183,26 @@ export default function RealtimeList() {
         const response = await fetch('/api/getPosts');
         const result = await response.json();
         console.log(result);
+        // location is string in the format "lat,lng"
+        // so we need to split it and convert it to number
+
         const enrichedData = await Promise.all(
-          result.map(async (post: Post) => ({
-            ...post,
-            city: await fetchCityName(post.location.lat, post.location.lng),
-          }))
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          result.map(async (post: any) => {
+            const clenLoc = cleanText(post.Location);
+            const [latitude, longitude] = clenLoc.split(',').map(Number);
+            console.log(latitude, longitude);
+            const state = await fetchCityName(latitude, longitude);
+
+            return {
+              ...post,
+              state: state || 'Unknown Location', // Fallback if no city is found
+            };
+          })
         );
 
         setData(enrichedData);
+        // setData(result);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -231,9 +245,9 @@ export default function RealtimeList() {
       <div className="flex items-center py-4">
         <Input
           placeholder="Filter by name..."
-          value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
+          value={(table.getColumn('Name')?.getFilterValue() as string) ?? ''}
           onChange={(event) =>
-            table.getColumn('name')?.setFilterValue(event.target.value)
+            table.getColumn('Name')?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />
@@ -285,10 +299,7 @@ export default function RealtimeList() {
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                >
+                <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id} className="text-center">
                       {flexRender(
@@ -301,40 +312,11 @@ export default function RealtimeList() {
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
+                <TableCell colSpan={columns.length}>No results.</TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
-      </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{' '}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
-        </div>
       </div>
     </div>
   );

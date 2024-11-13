@@ -1,3 +1,4 @@
+'use client';
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import Stepper from '@mui/material/Stepper';
@@ -23,8 +24,35 @@ export default function HorizontalLinearStepper({
   activeStep,
   stepContent,
 }: HorizontalLinearStepperProps) {
+  const [poem, setPoem] = React.useState(null as string | null);
+
+  React.useEffect(() => {
+    if (activeStep === 4 && !poem) {
+      const generatePoem = async () => {
+        try {
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            body: JSON.stringify({
+              userInput: 'tell me 10 lines poem on women equality',
+            }),
+            headers: { 'Content-Type': 'application/json' },
+          });
+
+          const result = await response.json();
+          if (result.reply) {
+            setPoem(result.reply);
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      };
+
+      generatePoem();
+    }
+  }, [activeStep, poem]);
+
   return (
-    <div className={`max-w-4xl mx-auto w-full mt-6`}>
+    <div className="max-w-4xl mx-auto w-full mt-6">
       <Stepper activeStep={activeStep}>
         {steps.map((label) => (
           <Step key={label}>
@@ -33,14 +61,44 @@ export default function HorizontalLinearStepper({
         ))}
       </Stepper>
       {activeStep === steps.length ? (
-        <Box display="flex" justifyContent="center" alignItems="center" mt={4}>
-          <CheckCircleIcon style={{ fontSize: 60, color: 'green' }} />
-          <Typography sx={{ ml: 2 }} variant="h5">
-            Post successfully submitted!
-          </Typography>
-          <Link href="/" className="ml-4 text-blue-500 underline">
-            Go back to home
-          </Link>
+        <Box
+          display="flex"
+          flexDirection="column"
+          justifyContent="center"
+          alignItems="center"
+          mt={4}
+        >
+          <div className="flex items-center gap-1">
+            <CheckCircleIcon style={{ fontSize: 60, color: 'green' }} />
+            <Typography sx={{ ml: 2 }} variant="h5">
+              Post successfully submitted!
+            </Typography>
+            <Link href="/" className="ml-4 text-blue-500 underline">
+              Go back to home
+            </Link>
+          </div>
+          {poem && (
+            <Box
+              mt={4}
+              p={4}
+              sx={{
+                fontFamily: 'Georgia, serif',
+                fontSize: '1.2rem',
+                backgroundColor: '#f9f9f9',
+                borderLeft: '4px solid #4CAF50',
+                color: '#555',
+                textAlign: 'center',
+                maxWidth: '600px',
+                whiteSpace: 'pre-line',
+              }}
+            >
+              {poem.split('. ').map((line, index) => (
+                <Typography key={index} variant="body1" gutterBottom>
+                  {line.trim()}
+                </Typography>
+              ))}
+            </Box>
+          )}
         </Box>
       ) : (
         <Box sx={{ mt: 2, mb: 1 }}>{stepContent[activeStep]}</Box>

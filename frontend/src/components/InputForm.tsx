@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useClerk } from '@clerk/nextjs';
-import { LocateIcon } from 'lucide-react';
+import { Loader2, LocateIcon } from 'lucide-react';
 import axios from 'axios';
 import { Slider } from './ui/slider';
 import { Textarea } from './ui/textarea';
@@ -28,9 +28,7 @@ const FormSchema = z.object({
   name: z.string().min(2, {
     message: 'Username must be at least 2 characters.',
   }),
-  phone: z.string().min(10, {
-    message: 'Phone number must be at least 10 characters.',
-  }),
+  phone: z.string().optional(),
   location: z.object({
     lat: z.number(),
     lng: z.number(),
@@ -73,8 +71,12 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
     },
   });
 
-  const [occurrenceDuration, setOccurrenceDuration] = useState(1);
-  const [frequency, setFrequency] = useState(1);
+  const [occurrenceDuration, setOccurrenceDuration] = useState(0);
+  const [frequency, setFrequency] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [selectedContactMethods, setSelectedContactMethods] = useState<
+    string[]
+  >([]);
 
   const getUserLocation = () => {
     if (navigator.geolocation) {
@@ -86,7 +88,8 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
         },
         (error) => {
           console.error('Error fetching location:', error);
-        }
+        },
+        { enableHighAccuracy: true }
       );
     } else {
       console.error('Geolocation is not supported by this browser.');
@@ -95,13 +98,21 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     try {
+      setLoading(true);
       const res = await axios.post('/api/generate-text', data);
       // setResImage(res.data.url);
       // console.log('Image generated:', res.data.url);
-      console.log('Text generated:', res.data.text);
-      setText(res.data.text);
+      console.log('Text generated:', res.data.gemini);
+      if (res.data.gemini) {
+        setText(res.data.gemini);
+        setLoading(false);
+      } else {
+        console.log('Text setting failed');
+        setLoading(false);
+      }
     } catch (e) {
       console.error(e);
+      setLoading(false);
     }
   }
 
@@ -124,19 +135,58 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
-          name="phone"
+          name="preferredContact"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Phone</FormLabel>
+              <FormLabel>Preferred Contact Method</FormLabel>
               <FormControl>
-                <Input placeholder="Your phone number" {...field} />
+                <div className="space-y-2">
+                  {contactMethods.map((method) => (
+                    <div key={method} className="flex items-center gap-2">
+                      <Checkbox
+                        checked={field.value.includes(
+                          method as
+                            | 'Phone'
+                            | 'Email'
+                            | 'Text message'
+                            | 'In-person'
+                        )}
+                        onCheckedChange={(checked) => {
+                          const newValue = checked
+                            ? [...field.value, method]
+                            : field.value.filter((item) => item !== method);
+                          field.onChange(newValue);
+                          setSelectedContactMethods(newValue);
+                        }}
+                      />
+                      <span>{method}</span>
+                    </div>
+                  ))}
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+
+        {selectedContactMethods.includes('Phone') && (
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone</FormLabel>
+                <FormControl>
+                  <Input placeholder="Your phone number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <FormField
           control={form.control}
           name="location"
@@ -218,47 +268,15 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
 
         <FormField
           control={form.control}
-          name="preferredContact"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Preferred Contact Method</FormLabel>
-              <FormControl>
-                <div className="space-y-2">
-                  {contactMethods.map((method) => (
-                    <div key={method} className="flex items-center gap-2">
-                      <Checkbox
-                        checked={field.value.includes(
-                          method as
-                            | 'Phone'
-                            | 'Email'
-                            | 'Text message'
-                            | 'In-person'
-                        )}
-                        onCheckedChange={(checked) => {
-                          const newValue = checked
-                            ? [...field.value, method]
-                            : field.value.filter((item) => item !== method);
-                          field.onChange(newValue);
-                        }}
-                      />
-                      <span>{method}</span>
-                    </div>
-                  ))}
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
           name="currentSituation"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Describe the Current Situation</FormLabel>
               <FormControl>
-                <Textarea placeholder="Describe the situation" {...field} />
+                <Textarea
+                  placeholder="Keywords describing the situation (e.g., emotional abuse, hurts child)"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -272,14 +290,25 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
             <FormItem>
               <FormLabel>Describe the Culprit</FormLabel>
               <FormControl>
-                <Textarea placeholder="Who is responsible" {...field} />
+                <Textarea
+                  placeholder="Keywords describing the culprit (e.g., dark skin, tall, blue eyes)"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <Button type="submit">Generate Text</Button>
+        <Button
+          type="submit"
+          className="flex items-center gap-2 duration-200 ease-in-out"
+        >
+          Generate Text
+          <Loader2
+            className={`h-5 w-5 ${loading ? 'animate-spin' : 'hidden'}`}
+          />
+        </Button>
       </form>
     </Form>
   );
