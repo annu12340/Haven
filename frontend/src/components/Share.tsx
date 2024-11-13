@@ -11,11 +11,16 @@ interface ShareProps {
 }
 
 function Share({ imageURL, resText, setShared }: ShareProps) {
+  const [encodedImage, setEncodedImage] = React.useState<string>('');
   const handleCommonFunction = async () => {
     // decode api - img as url (main branch)
     // decompose - generated text
     // save to db
     console.log('resText: ', resText);
+    const encodeImage = await axios.post('/api/decompose', {
+      resImage: imageURL,
+    });
+    setEncodedImage(encodeImage.data.encodedImage);
     const decomposeReq = await axios.post('/api/decompose', {
       resText: resText,
     });
@@ -32,7 +37,7 @@ function Share({ imageURL, resText, setShared }: ShareProps) {
 
   const handleShareTelegram = () => {
     const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(
-      imageURL
+      encodedImage
     )}`;
     window.open(telegramShareUrl, '_blank');
 
