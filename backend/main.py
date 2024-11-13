@@ -21,7 +21,7 @@ from backend.utils.regex_ptr import extract_info
 from backend.utils.steganography import (decode_text_from_image,
                                          encode_text_in_image)
 from backend.utils.text_llm import (create_poem, decompose_user_text,
-                                    expand_user_text_using_gemini,
+                                    expand_user_text_using_bedrock,
                                     text_to_image)
 from backend.utils.twitter import send_message_to_twitter
 
@@ -72,8 +72,8 @@ async def get_post_and_expand_content(post_info: PostInfo):
                 f"Culprit Description: {post_info.culprit_description}",
             ]
         )
-        gemini_response = await expand_user_text_using_gemini(concatenated_text)
-        return {"gemini_response": gemini_response}
+        bedrock_response = await expand_user_text_using_bedrock(bedrock_client, concatenated_text)
+        return {"response": bedrock_response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error expanding text: {e}")
 

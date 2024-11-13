@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 # Load environment variables
 from pymongo.operations import SearchIndexModel
-# from sentence_transformers import SentenceTransformer
 
 from backend.utils.embedding import generate_text_embedding
 
