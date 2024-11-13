@@ -88,7 +88,8 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
         },
         (error) => {
           console.error('Error fetching location:', error);
-        }
+        },
+        { enableHighAccuracy: true }
       );
     } else {
       console.error('Geolocation is not supported by this browser.');
