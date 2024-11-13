@@ -24,6 +24,8 @@ from backend.utils.text_llm import (create_poem, decompose_user_text,
                                     expand_user_text_using_gemini,
                                     text_to_image)
 from backend.utils.twitter import send_message_to_twitter
+import json
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -54,6 +56,17 @@ s3_client = boto3.client(
     region_name=AWS_REGION,
 )
 bedrock_client = boto3.client("bedrock-runtime", region_name=AWS_REGION)
+
+def serialize_object_id(document):
+    """Recursively convert ObjectId to string in MongoDB documents."""
+    if isinstance(document, dict):
+        for key, value in document.items():
+            if isinstance(value, ObjectId):
+                document[key] = str(value)
+            elif isinstance(value, dict):
+                document[key] = serialize_object_id(value)
+    return document
+
 
 # API Endpoints
 @app.post("/text-generation")
@@ -210,3 +223,52 @@ async def upload_embeddings():
         return {"message": "Embeddings uploaded successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error uploading embeddings: {e}")
+
+
+@app.post("/generate-image")
+async def generate_image(data: dict):
+    """Generate an image based on a text prompt using Amazon Bedrock and store it in S3."""
+    try:
+        # Payload for image generation
+        prompt = data.get("prompt")
+        print("Prompt: ", prompt)       
+        body = json.dumps({
+            "taskType": "TEXT_IMAGE",
+            "textToImageParams": {"text": prompt},
+            "imageGenerationConfig": {
+                "numberOfImages": 3,
+                "quality": "standard",
+                "height": 1024,
+                "width": 1024,
+                "cfgScale": 7.5,
+                "seed": 42
+            }
+        })
+        # Model invocation
+        response = bedrock_client.invoke_model(
+            body=body,
+            modelId="amazon.titan-image-generator-v1",
+            accept="application/json",
+            contentType="application/json"   
+        )
+        response_body = json.loads(response.get("body").read())
+        images_b64 = response_body["images"]
+        image_urls = []
+        for img_b64 in images_b64:
+            image_data = base64.b64decode(img_b64)
+            image_key = f"generated-images/{ObjectId()}.png"
+            print("Image Key: ", image_key)
+            s3_client.put_object(
+                Bucket=S3_BUCKET_NAME,
+                Key=image_key,
+                Body=image_data,
+                ContentType="image/png",
+                
+            )
+            image_url = f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{image_key}"
+            image_urls.append(image_url)
+            print("Image URL: ", image_url)     
+        return {"image_urls": image_urls}
+    except Exception as e:
+        logger.error("Error generating image: %s", e)
+        raise HTTPException(status_code=500, detail=f"Error generating image: {e}")
