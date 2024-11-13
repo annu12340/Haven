@@ -218,13 +218,13 @@ async def send_message(image_url: str, caption: str):
         )
 
 
-@app.get("/get-all-posts")
+@app.get("/get-admin-posts")
 def get_all_posts():
     """Retrieve all posts from the database."""
     try:
         # Database connection
         db = get_database()
-        posts = [serialize_object_id(post) for post in db["posts"].find()]
+        posts = [serialize_object_id(post) for post in db["admin"].find()]
         return JSONResponse(content=posts)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving posts: {e}")
@@ -249,7 +249,7 @@ def get_post_by_id(post_id: str):
     try:
         # Database connection
         db = get_database()
-        post = db["posts"].find_one({"_id": ObjectId(post_id)})
+        post = db["admin"].find_one({"_id": ObjectId(post_id)})
         if not post:
             raise HTTPException(status_code=404, detail="Post not found")
         return JSONResponse(content=serialize_object_id(post))

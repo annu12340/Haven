@@ -6,7 +6,7 @@ export async function GET() {
   try {
     // Replace with your FastAPI backend URL
     const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/get-all-posts`
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/get-admin-posts`
     );
 
     // Check if the response was successful

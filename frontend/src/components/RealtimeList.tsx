@@ -41,15 +41,19 @@ import {
 } from '@/components/ui/table';
 import Link from 'next/link';
 
-export type Post = {
-  _id: string;
-  name: string;
-  location: { lat: number; lng: number };
-  severity: string;
-  issue: string;
-  other_info: string;
-  city?: string;
-  status: string;
+export type DomesticViolenceReport = {
+  _id: string; // Unique identifier for the report
+  name: string; // Name of the person
+  location: string; // Location as a comma-separated string (e.g., "13.0646016, 80.2062336")
+  preferredWayOfContact: string; // Preferred way of contact (e.g., "Phone")
+  contactInfo: string; // Contact information (e.g., phone number)
+  frequencyOfDomesticViolence: string; // Frequency of domestic violence (e.g., "7 times a week")
+  relationshipWithPerpetrator: string; // Relationship with the perpetrator (e.g., "Not specified")
+  severityOfDomesticViolence: string; // Severity level (e.g., "Sev3 (Frequent physical abuse or threats)")
+  natureOfDomesticViolence: string; // Nature of domestic violence (e.g., "Physical")
+  impactOnChildren: string; // Impact on children (e.g., "The child is currently being hurt and needs immediate help.")
+  culpritDetails: string; // Details of the culprit (e.g., "A person with dark skin")
+  otherInfo: string; // Other additional information (e.g., "The situation has been happening for 10 years and is incredibly serious.")
 };
 
 // Function to convert coordinates to city name
@@ -66,7 +70,7 @@ const fetchCityName = async (lat: number, lng: number) => {
   }
 };
 
-export const columns: ColumnDef<Post>[] = [
+export const columns: ColumnDef<DomesticViolenceReport>[] = [
   {
     id: 'sno',
     header: 'S.No',
@@ -74,7 +78,7 @@ export const columns: ColumnDef<Post>[] = [
     enableSorting: false,
   },
   {
-    accessorKey: 'name',
+    accessorKey: 'Name',
     header: 'Name',
   },
   {
@@ -83,7 +87,7 @@ export const columns: ColumnDef<Post>[] = [
     cell: ({ row }) => <div>{row.getValue('city') || 'Loading...'}</div>,
   },
   {
-    accessorKey: 'severity',
+    accessorKey: 'Severity of domestic violence',
     header: ({ column }) => (
       <Button
         variant="ghost"
@@ -95,9 +99,9 @@ export const columns: ColumnDef<Post>[] = [
     ),
     cell: ({ row }) => (
       <div
-        className={`priority-badge priority-${row.original.severity.toLowerCase()}`}
+        className={`priority-badge priority-${row.original.severityOfDomesticViolence}`}
       >
-        {row.getValue('severity')}
+        {row.getValue('Severity of domestic violence')}
       </div>
     ),
     sortingFn: (rowA, rowB) => {
@@ -183,7 +187,7 @@ export const columns: ColumnDef<Post>[] = [
 ];
 
 export default function RealtimeList() {
-  const [data, setData] = React.useState<Post[]>([]);
+  const [data, setData] = React.useState<DomesticViolenceReport[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -199,14 +203,15 @@ export default function RealtimeList() {
         const response = await fetch('/api/getPosts');
         const result = await response.json();
         console.log(result);
-        const enrichedData = await Promise.all(
-          result.map(async (post: Post) => ({
-            ...post,
-            city: await fetchCityName(post.location.lat, post.location.lng),
-          }))
-        );
+        // const enrichedData = await Promise.all(
+        //   result.map(async (post: DomesticViolenceReport) => ({
+        //     ...post,
+        //     city: await fetchCityName(post.location.lat, post.location.lng),
+        //   }))
+        // );
 
-        setData(enrichedData);
+        // setData(enrichedData);
+        setData(result);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
