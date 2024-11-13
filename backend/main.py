@@ -1,5 +1,6 @@
 # Built-in libraries
 import base64
+import json
 import logging
 import os
 
@@ -22,10 +23,9 @@ from backend.utils.steganography import (decode_text_from_image,
                                          encode_text_in_image)
 from backend.utils.text_llm import (create_poem, decompose_user_text,
                                     expand_user_text_using_gemini,
+                                    expand_user_text_using_gemma,
                                     text_to_image)
 from backend.utils.twitter import send_message_to_twitter
-import json
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -72,26 +72,25 @@ bedrock_client = boto3.client("bedrock-runtime", region_name=AWS_REGION)
 
 # API Endpoints
 @app.post("/text-generation")
-async def get_post_and_expand_content(post_info: PostInfo):
+async def get_post_and_expand_its_content(post_info: PostInfo):
     """Expand user input text for help message generation."""
     try:
-        concatenated_text = "\n".join(
-            [
-                f"Name: {post_info.name}",
-                f"Phone: {post_info.phone}",
-                f"Location: {post_info.location['lat']},{post_info.location['lng']}",
-                f"Duration of Abuse: {post_info.duration_of_abuse}",
-                f"Frequency of Incidents: {post_info.frequency_of_incidents}",
-                f"Preferred Contact Method: {post_info.preferred_contact_method[0]}",
-                f"Current Situation: {post_info.current_situation}",
-                f"Culprit Description: {post_info.culprit_description}",
-            ]
+        concatenated_text = (
+            f"Name: {post_info.name}\n"
+            f"Phone: {post_info.phone}\n"
+            f"Location: {post_info.location}\n"
+            f"Duration of Abuse: {post_info.duration_of_abuse}\n"
+            f"Frequency of Incidents: {post_info.frequency_of_incidents}\n"
+            f"Preferred Contact Method: {post_info.preferred_contact_method}\n"
+            f"Current Situation: {post_info.current_situation}\n"
+            f"Culprit Description: {post_info.culprit_description}\n"
+            f"Custom Text: {post_info.custom_text}\n"
         )
         gemini_response = await expand_user_text_using_gemini(concatenated_text)
-        return {"gemini_response": gemini_response}
+        gemma_response = await expand_user_text_using_gemma(concatenated_text)
+        return {"gemini_response": gemini_response, "gemma_response": gemma_response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error expanding text: {e}")
-
 
 @app.post("/img-generation")
 async def create_image_from_prompt(input_data: str):
@@ -242,7 +241,7 @@ async def generate_image(data: dict):
     try:
         # Payload for image generation
         prompt = data.get("prompt")
-        print("Prompt: ", prompt)       
+        print("Prompt: ", prompt)
         body = json.dumps({
             "taskType": "TEXT_IMAGE",
             "textToImageParams": {"text": prompt},
@@ -260,7 +259,7 @@ async def generate_image(data: dict):
             body=body,
             modelId="amazon.titan-image-generator-v1",
             accept="application/json",
-            contentType="application/json"   
+            contentType="application/json"
         )
         response_body = json.loads(response.get("body").read())
         images_b64 = response_body["images"]
@@ -274,11 +273,11 @@ async def generate_image(data: dict):
                 Key=image_key,
                 Body=image_data,
                 ContentType="image/png",
-                
+
             )
             image_url = f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{image_key}"
             image_urls.append(image_url)
-            print("Image URL: ", image_url)     
+            print("Image URL: ", image_url)
         return {"image_urls": image_urls}
     except Exception as e:
         logger.error("Error generating image: %s", e)
