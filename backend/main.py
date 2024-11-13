@@ -25,12 +25,17 @@ from backend.utils.text_llm import (create_poem, decompose_user_text,
                                     expand_user_text_using_gemma,
                                     text_to_image)
 from backend.utils.twitter import send_message_to_twitter
+import json
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler()
 handler.setFormatter(CustomFormatter())
 logger.addHandler(handler)
+
+# Cached database connection
+db = None
 
 # Initialize FastAPI and CORS middleware
 app = FastAPI()
@@ -41,6 +46,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def initialize_database():
+    global db
+    if db is None:
+        db = get_database()  # Establish the connection once at load time
+
+# Call the initialize function at startup
+@app.on_event("startup")
+async def startup_event():
+    initialize_database()
 
 # Environment and AWS setup
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
@@ -102,7 +117,6 @@ async def decompose_text_content(data: dict):
 @app.post("/save-extracted-data")
 async def save_extracted_data(data: dict):
     try:
-        db = get_database()
         db["admin"].insert_one(data)
         return {"status": "Data saved successfully"}
     except Exception as e:
@@ -169,7 +183,6 @@ async def send_message_to_twitter_endpoint(image_url: str, caption: str):
 def get_all_posts():
     """Retrieve all posts from the database."""
     try:
-        db = get_database()
         posts = [serialize_object_id(post) for post in db["admin"].find()]
         return JSONResponse(content=posts)
     except Exception as e:
@@ -180,7 +193,6 @@ def get_all_posts():
 def find_top_matching_posts(info: str, collection: str):
     """Find top matches based on embedding similarity."""
     try:
-        db = get_database()
         description_vector = generate_text_embedding(info)
         top_matches = find_top_matches(db[collection], description_vector)
         return [serialize_object_id(match) for match in top_matches]
@@ -192,7 +204,6 @@ def find_top_matching_posts(info: str, collection: str):
 def get_post_by_id(post_id: str):
     """Retrieve a specific post by its ID."""
     try:
-        db = get_database()
         post = db["admin"].find_one({"_id": ObjectId(post_id)})
         if not post:
             raise HTTPException(status_code=404, detail="Post not found")
@@ -200,6 +211,19 @@ def get_post_by_id(post_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving post by ID: {e}")
 
+@app.post("/close-issue/{issue_id}")
+async def close_issue(issue_id: str):
+    """Mark an issue as closed by updating its status."""
+    try:
+        result = db["admin"].update_one(
+            {"_id": ObjectId(issue_id)},
+            {"$set": {"status": "closed"}}
+        )
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Issue not found or already closed")
+        return {"status": "Issue marked as closed"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error closing issue: {e}")
 
 @app.post("/upload_embeddings/")
 async def upload_embeddings():
@@ -210,3 +234,52 @@ async def upload_embeddings():
         return {"message": "Embeddings uploaded successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error uploading embeddings: {e}")
+
+
+@app.post("/generate-image")
+async def generate_image(data: dict):
+    """Generate an image based on a text prompt using Amazon Bedrock and store it in S3."""
+    try:
+        # Payload for image generation
+        prompt = data.get("prompt")
+        print("Prompt: ", prompt)       
+        body = json.dumps({
+            "taskType": "TEXT_IMAGE",
+            "textToImageParams": {"text": prompt},
+            "imageGenerationConfig": {
+                "numberOfImages": 3,
+                "quality": "standard",
+                "height": 1024,
+                "width": 1024,
+                "cfgScale": 7.5,
+                "seed": 42
+            }
+        })
+        # Model invocation
+        response = bedrock_client.invoke_model(
+            body=body,
+            modelId="amazon.titan-image-generator-v1",
+            accept="application/json",
+            contentType="application/json"   
+        )
+        response_body = json.loads(response.get("body").read())
+        images_b64 = response_body["images"]
+        image_urls = []
+        for img_b64 in images_b64:
+            image_data = base64.b64decode(img_b64)
+            image_key = f"generated-images/{ObjectId()}.png"
+            print("Image Key: ", image_key)
+            s3_client.put_object(
+                Bucket=S3_BUCKET_NAME,
+                Key=image_key,
+                Body=image_data,
+                ContentType="image/png",
+                
+            )
+            image_url = f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{image_key}"
+            image_urls.append(image_url)
+            print("Image URL: ", image_url)     
+        return {"image_urls": image_urls}
+    except Exception as e:
+        logger.error("Error generating image: %s", e)
+        raise HTTPException(status_code=500, detail=f"Error generating image: {e}")

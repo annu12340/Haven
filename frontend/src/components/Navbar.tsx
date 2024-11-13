@@ -22,7 +22,7 @@ function Navbar() {
       >
         Support<span className="text-blue-700">Safe</span>
       </Link>
-      <div className="flex items-center justify-center gap-6 font-medium text-gray-600">
+      <div className="flex items-center justify-center gap-10 font-medium text-gray-600">
         <Link
           href="/"
           className={`${
@@ -76,26 +76,6 @@ function Navbar() {
           } transition-colors duration-200`}
         >
           Therapy Bot
-        </Link>
-        <Link
-          href="/guidelines"
-          className={`${
-            isActive('/guidelines')
-              ? 'text-blue-700 font-semibold'
-              : 'hover:text-blue-700'
-          } transition-colors duration-200`}
-        >
-          Guidelines
-        </Link>
-        <Link
-          href="/about"
-          className={`${
-            isActive('/about')
-              ? 'text-blue-700 font-semibold'
-              : 'hover:text-blue-700'
-          } transition-colors duration-200`}
-        >
-          About Us
         </Link>
       </div>
       <div className="flex items-center gap-2">

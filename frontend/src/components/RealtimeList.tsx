@@ -71,13 +71,26 @@ export const columns: ColumnDef<any>[] = [
         <ArrowUpDown />
       </Button>
     ),
-    cell: ({ row }) => (
-      <div
-        className={`priority-badge text-center priority-${row.original.severityOfDomesticViolence}`}
-      >
-        {cleanText(row.getValue('Severity of domestic violence'))}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const severity = cleanText(row.getValue('Severity of domestic violence'));
+      const severityColors = {
+        'Very High': 'bg-red-500 text-white',
+        High: 'bg-yellow-500 text-white',
+        Medium: 'bg-blue-500 text-white',
+        Low: 'bg-green-500 text-white',
+      };
+      const severityClass =
+        severityColors[severity as keyof typeof severityColors] ||
+        'bg-gray-300 text-black'; // Default to gray if severity is unknown
+
+      return (
+        <div
+          className={`priority-badge ${severityClass} mx-auto text-center max-w-[80px] text-[10px] border px-1 py-1 rounded-full`}
+        >
+          {severity}
+        </div>
+      );
+    },
     sortingFn: (rowA, rowB) => {
       const priorityOrder = { 'Very High': 0, High: 1, Medium: 2, Low: 3 };
       const severityA = cleanText(
@@ -100,41 +113,22 @@ export const columns: ColumnDef<any>[] = [
   {
     accessorKey: 'status',
     header: 'Status',
+    cell: ({ row }) => {
+      const status = row.getValue('status');
+      return (
+        <div>
+          {typeof status === 'string'
+            ? status.charAt(0).toUpperCase() + status.slice(1)
+            : ''}
+        </div>
+      );
+    },
   },
   {
     id: 'actions',
     enableHiding: false,
     cell: ({ row }) => {
       const post = row.original;
-
-      const handleCompleteIssue = async () => {
-        try {
-          // Update the issue status to 'Completed'
-          const updatedPost = { ...post, status: 'Completed' };
-
-          // Perform any API call here to update the status in the backend if necessary
-          const response = await fetch('/api/updatePostStatus', {
-            method: 'POST',
-            body: JSON.stringify(updatedPost),
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (response.ok) {
-            // Update the status in the UI
-            //
-          } else {
-            console.error(
-              'Failed to update issue status:',
-              response.statusText
-            );
-          }
-        } catch (error) {
-          console.error('Error completing issue:', error);
-        }
-      };
-
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -155,9 +149,6 @@ export const columns: ColumnDef<any>[] = [
               <Link href={`/post/${post._id}`}>View Details</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleCompleteIssue}>
-              Complete Issue
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );
@@ -183,9 +174,6 @@ export default function RealtimeList() {
         const response = await fetch('/api/getPosts');
         const result = await response.json();
         console.log(result);
-        // location is string in the format "lat,lng"
-        // so we need to split it and convert it to number
-
         const enrichedData = await Promise.all(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           result.map(async (post: any) => {
