@@ -3,27 +3,41 @@ import os
 
 import google.generativeai as genai
 from dotenv import load_dotenv
+from langchain_community.embeddings.sentence_transformer import \
+    SentenceTransformerEmbeddings
 
 load_dotenv()
 
 
 def generate_text_embedding(bedrock_client, text):
-    model_id = "amazon.titan-embed-text-v2:0"
+    try:
+        # Try using AWS Bedrock first
+        model_id = "amazon.titan-embed-text-v2:0"
+        native_request = {"inputText": text}
 
-    native_request = {"inputText": text}
+        # Convert the native request to JSON.
+        request = json.dumps(native_request)
 
-    # Convert the native request to JSON.
-    request = json.dumps(native_request)
+        # Invoke the model with the request.
+        response = bedrock_client.invoke_model(modelId=model_id, body=request)
 
-    # Invoke the model with the request.
-    response = bedrock_client.invoke_model(modelId=model_id, body=request)
+        # Decode the model's native response body.
+        model_response = json.loads(response["body"].read())
 
-    # Decode the model's native response body.
-    model_response = json.loads(response["body"].read())
+        # Extract and return the generated embedding
+        embedding = model_response["embedding"]
+        return embedding
 
-    # Extract and print the generated embedding and the input text token count.
-    embedding = model_response["embedding"]
-    return embedding
+    except Exception as e:
+        # If an error occurs with AWS, fallback to Langchain
+        print(f"Error with AWS Bedrock: {e}. Fallback to Langchain.")
+
+        # Define the Langchain embedding function
+        embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+
+        # Use Langchain to generate embedding
+        embedding = embedding_function.embed(text)
+        return embedding
 
 
 def calculate_similarity_percentage(query_vector, result_vector):

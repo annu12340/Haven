@@ -4,6 +4,8 @@ from io import BytesIO
 import requests
 from bson import Binary, ObjectId
 from fastapi import FastAPI, File, HTTPException
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import PyPDFLoader
 from PIL import Image
 
 
@@ -33,25 +35,65 @@ def load_image_from_url_or_file(img_url=None, file=None):
 
 
 # Function to read files from the docs directory with improved error handling for encoding
+# def read_files_from_directory(directory: str):
+#     file_contents = []
+#     for filename in os.listdir(directory):
+#         file_path = os.path.join(directory, filename)
+#         if os.path.isfile(file_path):
+#             try:
+#                 with open(file_path, "r", encoding="utf-8") as file:
+#                     content = file.read()
+#                 file_contents.append((filename, content))
+#             except UnicodeDecodeError:
+#                 print(
+#                     f"Error reading {filename} as UTF-8. Trying a different encoding..."
+#                 )
+#                 try:
+#                     with open(file_path, "r", encoding="latin-1") as file:
+#                         content = file.read()
+#                     file_contents.append((filename, content))
+#                 except Exception as e:
+#                     print(
+#                         f"Failed to read {filename} with both UTF-8 and latin-1 encodings. Error: {e}"
+#                     )
+#     return file_contents
+
+
+# Function to read files (both text and PDFs) from a directory
 def read_files_from_directory(directory: str):
     file_contents = []
+
     for filename in os.listdir(directory):
         file_path = os.path.join(directory, filename)
+
         if os.path.isfile(file_path):
-            try:
-                with open(file_path, "r", encoding="utf-8") as file:
-                    content = file.read()
-                file_contents.append((filename, content))
-            except UnicodeDecodeError:
-                print(
-                    f"Error reading {filename} as UTF-8. Trying a different encoding..."
-                )
+            # Handling PDF files
+            if filename.lower().endswith(".pdf"):
                 try:
-                    with open(file_path, "r", encoding="latin-1") as file:
-                        content = file.read()
-                    file_contents.append((filename, content))
+                    loader = PyPDFLoader(file_path)
+                    document = loader.load()
+                    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+                    chunked_documents = text_splitter.split_documents(document)
+                    file_contents.append((filename, chunked_documents))
                 except Exception as e:
-                    print(
-                        f"Failed to read {filename} with both UTF-8 and latin-1 encodings. Error: {e}"
-                    )
+                    print(f"Error processing PDF {filename}: {e}")
+
+            # Handling text files (UTF-8 and latin-1 encoding)
+            elif filename.lower().endswith(".txt"):
+                try:
+                    with open(file_path, "r", encoding="utf-8") as file:
+                        content = file.read()
+                    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+                    chunked_documents = text_splitter.split_documents([content])  # Convert content to list
+                    file_contents.append((filename, chunked_documents))
+                except UnicodeDecodeError:
+                    print(f"Error reading {filename} as UTF-8. Trying a different encoding...")
+                    try:
+                        with open(file_path, "r", encoding="latin-1") as file:
+                            content = file.read()
+                        chunked_documents = text_splitter.split_documents([content])
+                        file_contents.append((filename, chunked_documents))
+                    except Exception as e:
+                        print(f"Failed to read {filename} with both UTF-8 and latin-1 encodings. Error: {e}")
+
     return file_contents
