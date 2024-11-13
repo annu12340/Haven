@@ -33,6 +33,9 @@ handler = logging.StreamHandler()
 handler.setFormatter(CustomFormatter())
 logger.addHandler(handler)
 
+# Cached database connection
+db = None
+
 # Initialize FastAPI and CORS middleware
 app = FastAPI()
 app.add_middleware(
@@ -42,6 +45,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def initialize_database():
+    global db
+    if db is None:
+        db = get_database()  # Establish the connection once at load time
+
+# Call the initialize function at startup
+@app.on_event("startup")
+async def startup_event():
+    initialize_database()
 
 # Environment and AWS setup
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
@@ -56,17 +69,6 @@ s3_client = boto3.client(
     region_name=AWS_REGION,
 )
 bedrock_client = boto3.client("bedrock-runtime", region_name=AWS_REGION)
-
-def serialize_object_id(document):
-    """Recursively convert ObjectId to string in MongoDB documents."""
-    if isinstance(document, dict):
-        for key, value in document.items():
-            if isinstance(value, ObjectId):
-                document[key] = str(value)
-            elif isinstance(value, dict):
-                document[key] = serialize_object_id(value)
-    return document
-
 
 # API Endpoints
 @app.post("/text-generation")
@@ -115,7 +117,6 @@ async def decompose_text_content(data: dict):
 @app.post("/save-extracted-data")
 async def save_extracted_data(data: dict):
     try:
-        db = get_database()
         db["admin"].insert_one(data)
         return {"status": "Data saved successfully"}
     except Exception as e:
@@ -182,7 +183,6 @@ async def send_message_to_twitter_endpoint(image_url: str, caption: str):
 def get_all_posts():
     """Retrieve all posts from the database."""
     try:
-        db = get_database()
         posts = [serialize_object_id(post) for post in db["admin"].find()]
         return JSONResponse(content=posts)
     except Exception as e:
@@ -193,7 +193,6 @@ def get_all_posts():
 def find_top_matching_posts(info: str, collection: str):
     """Find top matches based on embedding similarity."""
     try:
-        db = get_database()
         description_vector = generate_text_embedding(info)
         top_matches = find_top_matches(db[collection], description_vector)
         return [serialize_object_id(match) for match in top_matches]
@@ -205,7 +204,6 @@ def find_top_matching_posts(info: str, collection: str):
 def get_post_by_id(post_id: str):
     """Retrieve a specific post by its ID."""
     try:
-        db = get_database()
         post = db["admin"].find_one({"_id": ObjectId(post_id)})
         if not post:
             raise HTTPException(status_code=404, detail="Post not found")
