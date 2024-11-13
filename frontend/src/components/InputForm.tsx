@@ -227,6 +227,7 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
                     value={[occurrenceDuration]}
                     min={1}
                     max={100}
+                    className="flex-1"
                     onValueChange={(value) => {
                       setOccurrenceDuration(value[0]);
                       field.onChange(value[0]);
@@ -253,6 +254,7 @@ export function InputForm({ setText }: { setText: (resText: string) => void }) {
                     value={[frequency]}
                     min={1}
                     max={100}
+                    className="flex-1"
                     onValueChange={(value) => {
                       setFrequency(value[0]);
                       field.onChange(value[0]);

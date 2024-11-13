@@ -48,6 +48,8 @@ export default function ImageGen({
   const [imageOptions, setImageOptions] = useState<string[] | null>(null); // To hold the array of image URLs
   const [selectedImage, setSelectedImage] = useState<string | null>(null); // To store the selected image
   const [isLoading, setIsLoading] = useState<boolean>(false); // Loading state for images
+  const [selectedText, setSelectedText] = useState<string>('');
+
   const promptSuggestions = [
     'Good Morning',
     'Good Night',
@@ -77,11 +79,16 @@ export default function ImageGen({
     setResImage(imageUrl); // Update the parent component with the final image URL
   };
 
+  const handleTextOptionClick = (text: string) => {
+    setSelectedText(text); // Set the selected text
+    form.setValue('generatedText', text); // Update the form field with the selected text
+  };
+
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="max-w-2xl mx-auto space-y-9 w-full"
+        className="max-w-4xl mx-auto space-y-9 w-full"
       >
         <FormField
           control={form.control}
@@ -90,7 +97,21 @@ export default function ImageGen({
             <FormItem>
               <FormLabel>Generated Text</FormLabel>
               <FormControl>
-                <Textarea {...field} rows={8} />
+                {!selectedText ? (
+                  <div className="space-x-2 flex items-center w-full ">
+                    {['Text 1', 'Text 2'].map((textOption, index) => (
+                      <div
+                        key={index}
+                        onClick={() => handleTextOptionClick(textOption)}
+                        className="cursor-pointer w-full bg-slate-200 p-2 rounded-md hover:bg-slate-300"
+                      >
+                        {textOption}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <Textarea {...field} value={selectedText} rows={8} />
+                )}
               </FormControl>
               <div className="flex items-center gap-2 font-medium text-slate-700 float-right text-sm">
                 <SparklesIcon size={18} />
