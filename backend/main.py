@@ -1,70 +1,38 @@
-from io import BytesIO
+# Built-in libraries
+import base64
+import logging
+import os
 
-import requests
+# External dependencies
+import boto3
 from bson import ObjectId
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
-from PIL import Image
 
-from backend.db import get_database
-from backend.schema import PostInfo
+from backend.db import get_database, upload_embeddings_to_mongo
+from backend.logger import CustomFormatter
+from backend.schema import FileContent, PostInfo
+from backend.utils.common import (load_image_from_url_or_file,
+                                  read_files_from_directory,
+                                  serialize_object_id)
 from backend.utils.embedding import find_top_matches, generate_text_embedding
 from backend.utils.regex_ptr import extract_info
 from backend.utils.steganography import (decode_text_from_image,
                                          encode_text_in_image)
 from backend.utils.text_llm import (create_poem, decompose_user_text,
                                     expand_user_text_using_gemini,
-                                    expand_user_text_using_gemma,
                                     text_to_image)
 from backend.utils.twitter import send_message_to_twitter
 
-# Built-in libraries
-import base64
-import logging
-import json
-import os
-
-# External dependencies
-import boto3
-
-# Customize logging format and add colors
-class CustomFormatter(logging.Formatter):
-    """Custom formatter with colors for different log levels."""
-
-    # Define log colors
-    gray = "\x1b[38;20m"
-    yellow = "\x1b[33;20m"
-    red = "\x1b[31;20m"
-    bold_red = "\x1b[31;1m"
-    reset = "\x1b[0m"
-
-    # Define formats for different log levels
-    FORMATS = {
-        logging.DEBUG: gray + "[%(asctime)s] %(levelname)s: %(message)s" + reset,
-        logging.INFO: gray + "[%(asctime)s] %(levelname)s: %(message)s" + reset,
-        logging.WARNING: yellow + "[%(asctime)s] %(levelname)s: %(message)s" + reset,
-        logging.ERROR: red + "[%(asctime)s] %(levelname)s: %(message)s" + reset,
-        logging.CRITICAL: bold_red + "[%(asctime)s] %(levelname)s: %(message)s" + reset,
-    }
-
-    def format(self, record):
-        log_fmt = self.FORMATS.get(record.levelno, self.gray)
-        formatter = logging.Formatter(log_fmt, datefmt="%Y-%m-%d %H:%M:%S")
-        return formatter.format(record)
-
-
-# Setup custom logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler()
 handler.setFormatter(CustomFormatter())
 logger.addHandler(handler)
 
-
+# Initialize FastAPI and CORS middleware
 app = FastAPI()
-
-# Set up CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -73,66 +41,38 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load environment variables
+# Environment and AWS setup
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_REGION = os.getenv("AWS_REGION")
 S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "shebuilds-womentechmakers")
 
-# Initialize boto3 clients
 s3_client = boto3.client(
     "s3",
     aws_access_key_id=AWS_ACCESS_KEY_ID,
     aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-    region_name=AWS_REGION
+    region_name=AWS_REGION,
 )
+bedrock_client = boto3.client("bedrock-runtime", region_name=AWS_REGION)
 
-bedrock_client = boto3.client("bedrock-runtime",region_name=AWS_REGION) 
-
-# Utility function to convert ObjectId to string
-def serialize_object_id(document):
-    """Recursively convert ObjectId to string in MongoDB documents."""
-    if isinstance(document, dict):
-        for key, value in document.items():
-            if isinstance(value, ObjectId):
-                document[key] = str(value)
-            elif isinstance(value, dict):
-                document[key] = serialize_object_id(value)
-    return document
-
-
-# Routes
+# API Endpoints
 @app.post("/text-generation")
-async def get_post_and_expand_its_content(post_info: PostInfo):
+async def get_post_and_expand_content(post_info: PostInfo):
     """Expand user input text for help message generation."""
-    # print("name: ", post_info.name) 
-    # print("phone: ", post_info.phone)   
-    # print("location(lat): ", post_info.location['lat'])
-    # print("location(lng): ", post_info.location['lng'])         
-    # print("duration_of_abuse: ", post_info.duration_of_abuse)
-    # print("frequency_of_incidents: ", post_info.frequency_of_incidents)         
-    # print("preferred_contact_method: ", post_info.preferred_contact_method[0]) 
-    # print("current_situation: ", post_info.current_situation)
-    # print("culprit_description: ", post_info.culprit_description)
-
     try:
-        concatenated_text = (
-            f"Name: {post_info.name}\n"
-            f"Phone: {post_info.phone}\n"
-            f"Location: {post_info.location['lat']},{post_info.location['lng']}\n"
-            f"Duration of Abuse: {post_info.duration_of_abuse}\n"
-            f"Frequency of Incidents: {post_info.frequency_of_incidents}\n"
-            f"Preferred Contact Method: {post_info.preferred_contact_method[0]}\n"
-            f"Current Situation: {post_info.current_situation}\n"
-            f"Culprit Description: {post_info.culprit_description}\n"
-            #f"Custom Text: {post_info.custom_text}\n"
+        concatenated_text = "\n".join(
+            [
+                f"Name: {post_info.name}",
+                f"Phone: {post_info.phone}",
+                f"Location: {post_info.location['lat']},{post_info.location['lng']}",
+                f"Duration of Abuse: {post_info.duration_of_abuse}",
+                f"Frequency of Incidents: {post_info.frequency_of_incidents}",
+                f"Preferred Contact Method: {post_info.preferred_contact_method[0]}",
+                f"Current Situation: {post_info.current_situation}",
+                f"Culprit Description: {post_info.culprit_description}",
+            ]
         )
-        print("Concatenated Text: ", concatenated_text) 
         gemini_response = await expand_user_text_using_gemini(concatenated_text)
-        print("Gemini Response: ", gemini_response)
-        # gemma_response = await expand_user_text_using_gemma(concatenated_text)
-        # print("Gemma Response: ", gemma_response)
-        # return {"gemini_response": gemini_response, "gemma_response": gemma_response}
         return {"gemini_response": gemini_response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error expanding text: {e}")
@@ -149,22 +89,19 @@ async def create_image_from_prompt(input_data: str):
 
 
 @app.post("/text-decomposition")
-async def get_text_and_decompose_its_content(data: dict):
+async def decompose_text_content(data: dict):
     """Decompose and extract information from user text."""
     try:
         text = data.get("text")
-        print("Text: ", text)
         decomposed_text = decompose_user_text(text)
-        extracted_data = extract_info(decomposed_text)
-        return {"extracted_data": extracted_data}
+        return {"extracted_data": extract_info(decomposed_text)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error decomposing text: {e}")
-    
-# save extracted data to database
-@app.post("/save-extracted-data")   
+
+
+@app.post("/save-extracted-data")
 async def save_extracted_data(data: dict):
     try:
-        # Database connection
         db = get_database()
         db["admin"].insert_one(data)
         return {"status": "Data saved successfully"}
@@ -173,24 +110,15 @@ async def save_extracted_data(data: dict):
 
 
 @app.post("/encode")
-async def encode_text(text: str, img_url: str = None, file: UploadFile = File(None)):
+async def encode_text_in_image_endpoint(
+    text: str, img_url: str = None, file: UploadFile = File(None)
+):
     """Encode text into an image."""
     try:
-        if bool(img_url) == bool(file):
-            raise HTTPException(
-                status_code=400, detail="Provide either an image URL or file, not both."
-            )
-
-        image = (
-            Image.open(BytesIO(requests.get(img_url).content))
-            if img_url
-            else Image.open(file.file)
-        )
+        image = load_image_from_url_or_file(img_url, file)
         encoded_image = encode_text_in_image(image, text)
-
         output_path = "encoded_image.png"
         encoded_image.save(output_path, format="PNG")
-
         return StreamingResponse(
             open(output_path, "rb"),
             media_type="image/png",
@@ -203,21 +131,13 @@ async def encode_text(text: str, img_url: str = None, file: UploadFile = File(No
 
 
 @app.post("/decode")
-async def decode_text(img_url: str = None, file: UploadFile = File(None)):
+async def decode_text_from_image_endpoint(
+    img_url: str = None, file: UploadFile = File(None)
+):
     """Decode text from an image."""
     try:
-        if bool(img_url) == bool(file):
-            raise HTTPException(
-                status_code=400, detail="Provide either an image URL or file, not both."
-            )
-
-        image = (
-            Image.open(BytesIO(requests.get(img_url).content))
-            if img_url
-            else Image.open(file.file)
-        )
-        decoded_text = decode_text_from_image(image)
-        return {"decoded_text": decoded_text}
+        image = load_image_from_url_or_file(img_url, file)
+        return {"decoded_text": decode_text_from_image(image)}
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error decoding text from image: {e}"
@@ -225,7 +145,7 @@ async def decode_text(img_url: str = None, file: UploadFile = File(None)):
 
 
 @app.get("/poem-generation")
-async def create_inspiring_poems(text: str):
+async def create_poem_endpoint(text: str):
     """Generate an inspirational poem based on input text."""
     try:
         return {"poem": create_poem(text)}
@@ -234,7 +154,7 @@ async def create_inspiring_poems(text: str):
 
 
 @app.post("/send-message")
-async def send_message(image_url: str, caption: str):
+async def send_message_to_twitter_endpoint(image_url: str, caption: str):
     """Send a message to Twitter."""
     try:
         send_message_to_twitter(image_url, caption)
@@ -249,7 +169,6 @@ async def send_message(image_url: str, caption: str):
 def get_all_posts():
     """Retrieve all posts from the database."""
     try:
-        # Database connection
         db = get_database()
         posts = [serialize_object_id(post) for post in db["admin"].find()]
         return JSONResponse(content=posts)
@@ -258,13 +177,12 @@ def get_all_posts():
 
 
 @app.get("/find-match")
-def get_top_matches(info: str):
+def find_top_matching_posts(info: str, collection: str):
     """Find top matches based on embedding similarity."""
     try:
-        # Database connection
         db = get_database()
         description_vector = generate_text_embedding(info)
-        top_matches = find_top_matches(db["complains2"], description_vector)
+        top_matches = find_top_matches(db[collection], description_vector)
         return [serialize_object_id(match) for match in top_matches]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error finding matches: {e}")
@@ -274,7 +192,6 @@ def get_top_matches(info: str):
 def get_post_by_id(post_id: str):
     """Retrieve a specific post by its ID."""
     try:
-        # Database connection
         db = get_database()
         post = db["admin"].find_one({"_id": ObjectId(post_id)})
         if not post:
@@ -283,55 +200,13 @@ def get_post_by_id(post_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving post by ID: {e}")
 
-@app.post("/generate-image")
-async def generate_image(data: dict):
-    """Generate an image based on a text prompt using Amazon Bedrock and store it in S3."""
+
+@app.post("/upload_embeddings/")
+async def upload_embeddings():
+    """Upload embeddings to MongoDB."""
     try:
-        # Payload for image generation
-        prompt = data.get("prompt")
-        print("Prompt: ", prompt)       
-        body = json.dumps({
-            "taskType": "TEXT_IMAGE",
-            "textToImageParams": {"text": prompt},
-            "imageGenerationConfig": {
-                "numberOfImages": 3,
-                "quality": "standard",
-                "height": 1024,
-                "width": 1024,
-                "cfgScale": 7.5,
-                "seed": 42
-            }
-        })
-
-        # Model invocation
-        response = bedrock_client.invoke_model(
-            body=body,
-            modelId="amazon.titan-image-generator-v1",
-            accept="application/json",
-            contentType="application/json"   
-        )
-
-        response_body = json.loads(response.get("body").read())
-        images_b64 = response_body["images"]
-        image_urls = []
-        for img_b64 in images_b64:
-            image_data = base64.b64decode(img_b64)
-            image_key = f"generated-images/{ObjectId()}.png"
-            print("Image Key: ", image_key)
-            s3_client.put_object(
-                Bucket=S3_BUCKET_NAME,
-                Key=image_key,
-                Body=image_data,
-                ContentType="image/png",
-                
-            )
-
-            image_url = f"https://{S3_BUCKET_NAME}.s3.{AWS_REGION}.amazonaws.com/{image_key}"
-            image_urls.append(image_url)
-            print("Image URL: ", image_url)     
-
-        return {"image_urls": image_urls}
-
+        file_contents = read_files_from_directory("backend/docs")
+        upload_embeddings_to_mongo(file_contents)
+        return {"message": "Embeddings uploaded successfully"}
     except Exception as e:
-        logger.error("Error generating image: %s", e)
-        raise HTTPException(status_code=500, detail=f"Error generating image: {e}")
+        raise HTTPException(status_code=500, detail=f"Error uploading embeddings: {e}")

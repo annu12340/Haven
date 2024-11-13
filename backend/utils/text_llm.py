@@ -58,12 +58,12 @@ def text_to_image(user_input):
 
 def decompose_user_text(user_input):
     genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    print("before decompose: ",user_input)
+    print("before decompose: ", user_input)
     model = genai.GenerativeModel("gemini-1.5-flash")
     response = model.generate_content(
         f"{USER_POST_TEXT_DECOMPOSITION_PROMPT}. The data is {user_input}"
     )
-    print("after decompose: ",response.text)
+    print("after decompose: ", response.text)
     return response.text
 
 
