@@ -211,6 +211,19 @@ def get_post_by_id(post_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving post by ID: {e}")
 
+@app.post("/close-issue/{issue_id}")
+async def close_issue(issue_id: str):
+    """Mark an issue as closed by updating its status."""
+    try:
+        result = db["admin"].update_one(
+            {"_id": ObjectId(issue_id)},
+            {"$set": {"status": "closed"}}
+        )
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Issue not found or already closed")
+        return {"status": "Issue marked as closed"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error closing issue: {e}")
 
 @app.post("/upload_embeddings/")
 async def upload_embeddings():
