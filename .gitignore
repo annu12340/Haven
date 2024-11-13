@@ -9,3 +9,4 @@ backend/__pycache__/
 backend/utils/__pycache__/*
 frontend/.env.local
 frontend/node_modules
+ai-avatar
