@@ -1,5 +1,5 @@
 'use client';
-import { fetchCityName } from '@/lib/utils';
+import { cleanText, fetchCityName } from '@/lib/utils';
 import React, { useEffect, useState } from 'react';
 
 interface Post {
@@ -45,7 +45,8 @@ function PostDetail({ id }: { id: string }) {
 
   useEffect(() => {
     if (post) {
-      const [lat, lng] = post.Location.split(',').map(Number);
+      const cleanLoc = cleanText(post.Location);
+      const [lat, lng] = cleanLoc.split(',').map(Number);
 
       const fetchCity = async () => {
         try {
@@ -67,8 +68,8 @@ function PostDetail({ id }: { id: string }) {
   if (!post) {
     return <div>Loading...</div>;
   }
-
-  const [lat, lng] = post.Location.split(',').map(Number);
+  const cleanLoc = cleanText(post.Location);
+  const [lat, lng] = cleanLoc.split(',').map(Number);
   const mapUrl = `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_MAP_KEY}&q=${lat},${lng}`;
 
   return (

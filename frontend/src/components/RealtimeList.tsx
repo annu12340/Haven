@@ -41,7 +41,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import Link from 'next/link';
-import { fetchCityName } from '@/lib/utils';
+import { cleanText, fetchCityName } from '@/lib/utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const columns: ColumnDef<any>[] = [
@@ -56,9 +56,9 @@ export const columns: ColumnDef<any>[] = [
     header: 'Name',
   },
   {
-    accessorKey: 'city',
+    accessorKey: 'state',
     header: 'Location',
-    cell: ({ row }) => <div>{row.getValue('city') || 'Loading...'}</div>,
+    cell: ({ row }) => <div>{row.getValue('state') || 'Loading...'}</div>,
   },
   {
     accessorKey: 'Severity of domestic violence',
@@ -73,15 +73,19 @@ export const columns: ColumnDef<any>[] = [
     ),
     cell: ({ row }) => (
       <div
-        className={`priority-badge priority-${row.original.severityOfDomesticViolence}`}
+        className={`priority-badge text-center priority-${row.original.severityOfDomesticViolence}`}
       >
-        {row.getValue('Severity of domestic violence')}
+        {cleanText(row.getValue('Severity of domestic violence'))}
       </div>
     ),
     sortingFn: (rowA, rowB) => {
-      const priorityOrder = { High: 1, Medium: 2, Low: 3 };
-      const severityA = rowA.getValue('severity');
-      const severityB = rowB.getValue('severity');
+      const priorityOrder = { 'Very High': 0, High: 1, Medium: 2, Low: 3 };
+      const severityA = cleanText(
+        rowA.getValue('Severity of domestic violence')
+      );
+      const severityB = cleanText(
+        rowB.getValue('Severity of domestic violence')
+      );
       return (
         priorityOrder[severityA as keyof typeof priorityOrder] -
         priorityOrder[severityB as keyof typeof priorityOrder]
@@ -91,6 +95,7 @@ export const columns: ColumnDef<any>[] = [
   {
     accessorKey: 'Nature of domestic violence',
     header: 'Issue',
+    cell: ({ row }) => cleanText(row.getValue('Nature of domestic violence')),
   },
   {
     accessorKey: 'status',
@@ -99,7 +104,7 @@ export const columns: ColumnDef<any>[] = [
   {
     id: 'actions',
     enableHiding: false,
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       const post = row.original;
 
       const handleCompleteIssue = async () => {
@@ -184,13 +189,14 @@ export default function RealtimeList() {
         const enrichedData = await Promise.all(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           result.map(async (post: any) => {
-            const [latitude, longitude] = post.Location.split(',').map(Number);
+            const clenLoc = cleanText(post.Location);
+            const [latitude, longitude] = clenLoc.split(',').map(Number);
             console.log(latitude, longitude);
-            const city = await fetchCityName(latitude, longitude);
+            const state = await fetchCityName(latitude, longitude);
 
             return {
               ...post,
-              city: city || 'Unknown Location', // Fallback if no city is found
+              state: state || 'Unknown Location', // Fallback if no city is found
             };
           })
         );
