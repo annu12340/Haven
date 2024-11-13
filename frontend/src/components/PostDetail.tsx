@@ -11,10 +11,13 @@ import {
   MapPin,
   TrendingUp,
   Loader2,
+  Check,
 } from 'lucide-react';
 import CustomTimeline from './Timeline';
+import toast from 'react-hot-toast';
 
 interface Post {
+  _id: string;
   Name: string;
   Location: string;
   'Preferred way of contact': string;
@@ -88,19 +91,49 @@ function PostDetail({ id }: { id: string }) {
   const [lat, lng] = cleanLoc.split(',').map(Number);
   const mapUrl = `https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_MAP_KEY}&q=${lat},${lng}`;
 
+  const handleCloseIssue = async (issueId: string) => {
+    try {
+      const response = await fetch('/api/closeIssue', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ issueId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to close issue');
+      }
+
+      // const data = await response.json();
+      toast.success('Issue closed successfully');
+      setPost((prevPost) =>
+        prevPost ? { ...prevPost, status: 'closed' } : null
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full max-w-6xl w-full mx-auto p-5">
       <div className="flex items-center justify-between w-full">
         <h1 className="text-3xl font-bold">{post.Name}</h1>
-        <Button
-          onClick={() => {
-            console.log('Close Issue');
-          }}
-          className="flex items-center space-x-2"
-        >
-          <CircleX />
-          Close Issue
-        </Button>
+        {post.status === 'pending' && (
+          <Button
+            onClick={() => handleCloseIssue(post._id)}
+            className="flex items-center space-x-2"
+          >
+            <CircleX />
+            Close Issue
+          </Button>
+        )}
+        {post.status === 'closed' && (
+          <Button className="flex items-center space-x-2 bg-green-500 text-white hover:bg-green-600">
+            <Check />
+            Issue Closed
+          </Button>
+        )}
       </div>
       <div className="grid grid-cols-3 gap-3 mt-5">
         <div className="max-w-sm w-full rounded-md border flex flex-col gap-3 border-gray-400 p-3">
