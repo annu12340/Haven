@@ -1,9 +1,12 @@
 import os
+import pickle
 
+from bson import Binary
 from dotenv import load_dotenv
 from pymongo import MongoClient
 # Load environment variables
 from pymongo.operations import SearchIndexModel
+from sentence_transformers import SentenceTransformer
 
 from backend.utils.embedding import generate_text_embedding
 
@@ -71,3 +74,27 @@ def insert_data_into_db(
 # insert_data_into_db("Alice", {"lat": 37.7749, "lng": -122.4194}, "High", "Broken window", "Needs urgent repair")
 # insert_data_into_db("Bob", {"lat": 37.7749, "lng": -122.4194}, "Low", "Leaky faucet", "Minor issue")
 # insert_data_into_db("Charlie", {"lat": 37.7749, "lng": -122.4194}, "Medium", "Faulty wiring", "Needs inspection")
+
+# Function to encode text into embeddings
+def encode_text(text: str):
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+    return model.encode(text).tolist()  # Convert numpy array to list
+
+# Function to upload embeddings to MongoDB
+def upload_embeddings_to_mongo(file_contents):
+    db = get_database()
+    collection = db["doc_embedding"]
+    for filename, content in file_contents:
+        # Generate embeddings for the document content
+        embedding = encode_text(content)
+
+        # Prepare the document to insert into MongoDB
+        doc = {
+            "filename": filename,
+            "embedding": Binary(pickle.dumps(embedding)),  # Store as a binary object
+            "content": content[:500]  # Store the first 500 characters of the content for preview
+        }
+
+        # Insert the document into the MongoDB collection
+        collection.insert_one(doc)
+        print(f"Uploaded {filename} to MongoDB.")

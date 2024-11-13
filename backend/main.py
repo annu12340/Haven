@@ -1,14 +1,15 @@
+import os
 from io import BytesIO
 
 import requests
-from bson import ObjectId
+from bson import Binary, ObjectId
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from PIL import Image
 
-from backend.db import get_database
-from backend.schema import PostInfo
+from backend.db import get_database, upload_embeddings_to_mongo
+from backend.schema import FileContent, PostInfo
 from backend.utils.embedding import find_top_matches, generate_text_embedding
 from backend.utils.regex_ptr import extract_info
 from backend.utils.steganography import (decode_text_from_image,
@@ -197,3 +198,69 @@ def get_post_by_id(post_id: str):
         return JSONResponse(content=serialize_object_id(post))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving post by ID: {e}")
+
+
+
+# Directory containing docs
+docs_dir = "backend/docs"
+
+
+# Function to read files from the docs directory with improved error handling for encoding
+def read_files_from_directory(directory: str):
+    file_contents = []
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        if os.path.isfile(file_path):
+            try:
+                with open(file_path, "r", encoding="utf-8") as file:
+                    content = file.read()
+                file_contents.append((filename, content))
+            except UnicodeDecodeError:
+                print(f"Error reading {filename} as UTF-8. Trying a different encoding...")
+                try:
+                    with open(file_path, "r", encoding="latin-1") as file:
+                        content = file.read()
+                    file_contents.append((filename, content))
+                except Exception as e:
+                    print(f"Failed to read {filename} with both UTF-8 and latin-1 encodings. Error: {e}")
+    return file_contents
+
+
+import pickle
+
+
+# FastAPI endpoint to trigger reading and uploading files
+@app.post("/upload_embeddings/")
+async def upload_embeddings():
+    try:
+        # Read files from the docs directory
+        file_contents = read_files_from_directory(docs_dir)
+
+        # Upload embeddings to MongoDB
+        upload_embeddings_to_mongo(file_contents)
+
+        return {"message": "Embeddings uploaded successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# FastAPI endpoint to encode and store a single document (for testing)
+@app.post("/upload_single_document/")
+async def upload_single_document(file_content: FileContent):
+    try:
+        # Generate embeddings for the document content
+        embedding = encode_text(file_content.content)
+
+        # Prepare the document to insert into MongoDB
+        doc = {
+            "filename": file_content.filename,
+            "embedding": Binary(pickle.dumps(embedding)),
+            "content": file_content.content[:500]
+        }
+        db = get_database()
+        collection = db["doc_embedding"]
+        # Insert the document into the MongoDB collection
+        collection.insert_one(doc)
+
+        return {"message": f"Uploaded {file_content.filename} to MongoDB successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
