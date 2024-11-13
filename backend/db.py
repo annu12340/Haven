@@ -76,11 +76,6 @@ def insert_data_into_db(
 # insert_data_into_db("Bob", {"lat": 37.7749, "lng": -122.4194}, "Low", "Leaky faucet", "Minor issue")
 # insert_data_into_db("Charlie", {"lat": 37.7749, "lng": -122.4194}, "Medium", "Faulty wiring", "Needs inspection")
 
-# Function to encode text into embeddings
-def encode_text(text: str):
-    model = SentenceTransformer("all-MiniLM-L6-v2")
-    return model.encode(text).tolist()  # Convert numpy array to list
-
 
 # Function to upload embeddings to MongoDB
 def upload_embeddings_to_mongo(file_contents):
@@ -88,7 +83,7 @@ def upload_embeddings_to_mongo(file_contents):
     collection = db["doc_embedding"]
     for filename, content in file_contents:
         # Generate embeddings for the document content
-        embedding = encode_text(content)
+        embedding = generate_text_embedding(content)
 
         # Prepare the document to insert into MongoDB
         doc = {

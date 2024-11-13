@@ -178,12 +178,12 @@ def get_all_posts():
 
 
 @app.get("/find-match")
-def find_top_matching_posts(info: str):
+def find_top_matching_posts(info: str, collection: str):
     """Find top matches based on embedding similarity."""
     try:
         db = get_database()
         description_vector = generate_text_embedding(info)
-        top_matches = find_top_matches(db["complains2"], description_vector)
+        top_matches = find_top_matches(db[collection], description_vector)
         return [serialize_object_id(match) for match in top_matches]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error finding matches: {e}")
