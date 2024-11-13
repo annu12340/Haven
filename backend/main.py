@@ -94,7 +94,7 @@ async def decompose_text_content(data: dict):
     try:
         text = data.get("text")
         decomposed_text = decompose_user_text(text)
-        return {"extracted_data": extract_info(decomposed_text)}
+        return {"extracted_data": extract_info(bedrock_client, decomposed_text)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error decomposing text: {e}")
 
@@ -148,7 +148,7 @@ async def decode_text_from_image_endpoint(
 async def create_poem_endpoint(text: str):
     """Generate an inspirational poem based on input text."""
     try:
-        return {"poem": create_poem(text)}
+        return {"poem": create_poem(bedrock_runtime, text)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating poem: {e}")
 

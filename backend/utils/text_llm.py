@@ -11,16 +11,6 @@ from backend.prompts import (INSPIRATION_POEM_PROMPT,
 load_dotenv()
 
 
-async def expand_user_text_using_gemini(user_input):
-    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
-    model = genai.GenerativeModel("gemini-1.5-flash")
-    response = model.generate_content(
-        f"{USER_POST_TEXT_EXPANSION_PROMPT}. The data is {user_input}"
-    )
-    print(response.text)
-    return response.text
-
 
 async def expand_user_text_using_bedrock(bedrock_runtime, user_input):
     # Define the model ID to be used in the request.
@@ -30,7 +20,7 @@ async def expand_user_text_using_bedrock(bedrock_runtime, user_input):
     conversation = [
         {
             "role": "user",
-            "content": [{"text": user_input}],
+            "content": [    f"{USER_POST_TEXT_EXPANSION_PROMPT}. The data is {user_input}"],
         }
     ]
 
@@ -76,23 +66,82 @@ def text_to_image(user_input):
     #     image._pil_image.show()
 
 
-def decompose_user_text(user_input):
-    genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-    print("before decompose: ", user_input)
-    model = genai.GenerativeModel("gemini-1.5-flash")
-    response = model.generate_content(
-        f"{USER_POST_TEXT_DECOMPOSITION_PROMPT}. The data is {user_input}"
-    )
-    print("after decompose: ", response.text)
-    return response.text
+def decompose_user_text(bedrock_runtime, user_input):
+    # Define the model ID to be used in the request.
+    model_id = 'amazon.titan-text-express-v1'
+
+    # Create the conversation structure with the user's input.
+    conversation = [
+        {
+            "role": "user",
+            "content": [   f"{USER_POST_TEXT_DECOMPOSITION_PROMPT}. The data is {user_input}"],
+        }
+    ]
+
+    try:
+        # Send the conversation to the model using Bedrock's inference configuration.
+        response = bedrock_runtime.converse(
+            modelId=model_id,
+            messages=conversation,
+            inferenceConfig={
+                "maxTokens": 512,
+                "temperature": 0.4,
+                "topP": 0.8
+            }
+        )
+
+        # Extract and print the response text from the model's output.
+        response_text = response["output"]["message"]["content"][0]["text"]
+        print(response_text)
+        return response_text
+
+    except Exception as e:
+        # Log the error if the model invocation fails.
+        print(f"ERROR: Can't invoke '{model_id}'. Reason: {e}")
+        exit(1)
 
 
-def create_poem(user_input):
+
+
+def create_poem(bedrock_runtime, user_input):
+        # Define the model ID to be used in the request.
+    model_id = 'amazon.titan-text-express-v1'
+
+    # Create the conversation structure with the user's input.
+    conversation = [
+        {
+            "role": "user",
+            "content": [ f"{INSPIRATION_POEM_PROMPT}. The data is {user_input}"],
+        }
+    ]
+
+    try:
+        # Send the conversation to the model using Bedrock's inference configuration.
+        response = bedrock_runtime.converse(
+            modelId=model_id,
+            messages=conversation,
+            inferenceConfig={
+                "maxTokens": 512,
+                "temperature": 0.8,
+                "topP": 0.99
+            }
+        )
+
+        # Extract and print the response text from the model's output.
+        response_text = response["output"]["message"]["content"][0]["text"]
+        print(response_text)
+        return response_text
+
+    except Exception as e:
+        # Log the error if the model invocation fails.
+        print(f"ERROR: Can't invoke '{model_id}'. Reason: {e}")
+        exit(1)
+
     genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
     model = genai.GenerativeModel("gemini-1.5-flash-8b")
     response = model.generate_content(
-        f"{INSPIRATION_POEM_PROMPT}. The data is {user_input}"
+
     )
     print(response.text)
     return response.text
