@@ -18,15 +18,6 @@ function Header() {
             support journey starts here, and we&apos;re with you every step of
             the way! 🚀
           </p>
-
-          <div className="flex items-center gap-4">
-            <button className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-lg text-white rounded-lg shadow-md transform hover:scale-105 duration-200 ease-in-out font-semibold">
-              Register
-            </button>
-            <button className="px-6 py-3 text-lg text-blue-700 rounded-lg border border-blue-700 shadow-md transform hover:scale-105 hover:bg-blue-700 hover:text-white duration-200 ease-in-out font-semibold">
-              Report Now
-            </button>
-          </div>
         </div>
         <Image
           src={banner}
