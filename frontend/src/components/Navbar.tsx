@@ -68,7 +68,7 @@ function Navbar() {
           Law Bot
         </Link>
         <Link
-          href="/therapybot"
+          href="https://ai-avatar-frontend-coral.vercel.app/"
           className={`${
             isActive('/therapybot')
               ? 'text-blue-700 font-semibold'
