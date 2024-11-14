@@ -40,7 +40,7 @@ db = None
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000","https://haven-official.vercel.app"],
+    allow_origins=["http://localhost:3000","https://haven-official.vercel.app","https://amazonbedrock.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
