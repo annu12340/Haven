@@ -30,7 +30,8 @@ export async function POST(req: Request) {
     console.log('received data:', updatedData);
     const res = await axios.post(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/text-generation`,
-      updatedData
+      updatedData,
+      { timeout: 20000 }
     );
     console.log('Text next api:', res.data.gemini_response);
     // const res = {
