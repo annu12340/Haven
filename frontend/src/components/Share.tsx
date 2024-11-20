@@ -86,13 +86,14 @@ function Share({ imageURL, resText, setShared }: ShareProps) {
         </Button>
         <Button
           variant="default"
+          disabled
           // instagram colors
           className="flex items-center gap-2 bg-gradient-to-r from-[#405DE6] to-[#5851DB] text-white"
         >
           <ShareIcon size={24} />
           Share on Instagram
         </Button>
-        <Button variant="default" className="flex items-center gap-2">
+        <Button variant="default" className="flex items-center gap-2" disabled>
           <ShareIcon size={24} />
           Share on Slack
         </Button>

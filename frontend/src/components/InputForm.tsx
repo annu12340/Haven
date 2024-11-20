@@ -67,7 +67,7 @@ export function InputForm({
     defaultValues: {
       name: user?.fullName || '',
       phone: '',
-      location: { lat: 0, lng: 0 }, // Default to zero coordinates
+      location: { lat: 12.992865850638335, lng: 80.19331437058186 }, // Default to zero coordinates
       occurrenceDuration: '',
       frequency: '',
       visibleInjuries: 'No',
