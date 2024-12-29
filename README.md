@@ -1,4 +1,10 @@
-# Haven - Empowering Women in Silence# Haven - Empowering Women in Silence
+<div align="center">
+
+# Haven  
+*A Silent Shield, A Strong Voice.*
+
+</div>
+
 
 ### Inspiration 🌟
 Imagine a woman trapped in silence, enduring daily fear and abuse, unable to seek help because her every move is monitored. For millions of women worldwide, this is a daily reality.  
